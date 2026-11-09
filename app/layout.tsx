@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Plus_Jakarta_Sans, Sora } from "next/font/google";
+import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
@@ -17,11 +17,11 @@ import { routes } from "@/config/routes";
 import "./globals.css";
 
 /** Dashboard / auth UI. */
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const plusJakarta = localFont({
+  src: "./fonts/PlusJakartaSans-variable.ttf",
   display: "swap",
   variable: "--font-jakarta",
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
   fallback: [
     "ui-sans-serif",
     "system-ui",
@@ -32,27 +32,27 @@ const plusJakarta = Plus_Jakarta_Sans({
     "Arial",
     "sans-serif",
   ],
-  adjustFontFallback: true,
+  adjustFontFallback: "Arial",
 });
 
 /** Landing Techlo Lite → Holistic. */
-const sora = Sora({
-  subsets: ["latin"],
+const sora = localFont({
+  src: "./fonts/Sora-variable.ttf",
   display: "swap",
   variable: "--font-sora",
-  weight: ["400", "500", "700"],
+  weight: "400 700",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
-  adjustFontFallback: true,
+  adjustFontFallback: "Arial",
 });
 
 /** Acento tipográfico auth (mockup script). */
-const caveat = Caveat({
-  subsets: ["latin"],
+const caveat = localFont({
+  src: "./fonts/Caveat-variable.ttf",
   display: "swap",
   variable: "--font-caveat",
-  weight: ["500", "600", "700"],
+  weight: "500 700",
   fallback: ["cursive"],
-  adjustFontFallback: true,
+  adjustFontFallback: "Arial",
 });
 
 export const viewport: Viewport = {
