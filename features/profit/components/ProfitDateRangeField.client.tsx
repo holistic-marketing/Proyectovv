@@ -234,15 +234,11 @@ export function ProfitDateRangeField({
     return "text-[#c4bbb2] hover:bg-[#faf8f5]";
   }
 
-  function MonthGrid({
-    y,
-    m,
-    cells,
-  }: {
-    y: number;
-    m: number;
-    cells: ReturnType<typeof monthCells>;
-  }) {
+  function renderMonthGrid(
+    y: number,
+    m: number,
+    cells: ReturnType<typeof monthCells>,
+  ) {
     return (
       <div className="min-w-[15.5rem]">
         <p className="px-1 pb-2 text-center text-[12px] font-semibold text-[#1c1917]">
@@ -364,9 +360,9 @@ export function ProfitDateRangeField({
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
-            <MonthGrid y={leftY} m={leftM} cells={leftCells} />
+            {renderMonthGrid(leftY, leftM, leftCells)}
             <div className="hidden w-px self-stretch bg-[#f0ebe4] sm:block" />
-            <MonthGrid y={right.y} m={right.m} cells={rightCells} />
+            {renderMonthGrid(right.y, right.m, rightCells)}
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#f0ebe4] pt-2">

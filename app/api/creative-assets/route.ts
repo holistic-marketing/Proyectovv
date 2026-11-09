@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       account.external_account_id?.trim() || externalAdvertiserId;
   }
 
-  let parentDraftId: string | null =
+  const parentDraftId: string | null =
     typeof parentDraftIdRaw === "string" && parentDraftIdRaw.trim()
       ? parentDraftIdRaw.trim()
       : null;
