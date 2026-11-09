@@ -22,8 +22,12 @@ import { syncApprovedAdAccountsForCliente } from "@/lib/hecom/sync-approved-ad-a
 const ENTRY_ASSET_LIMIT = 50;
 const RECENT_REJECT_LIMIT = 8;
 
+// Instrumentación de tiempos para los logs entry_timing / bg_discover.
+// Fuera del componente para no leer el reloj directamente en el render.
+const readTimestamp = () => Date.now();
+
 export default async function CreativeAnalyzerPage() {
-  const t0 = Date.now();
+  const t0 = readTimestamp();
   const session = await requirePermission("creativeAnalyzer:read");
   const funding = await resolvePaymentsFundingCapabilities({
     email: session.email,
@@ -41,13 +45,13 @@ export default async function CreativeAnalyzerPage() {
     );
   }
 
-  const tDashboard = Date.now();
+  const tDashboard = readTimestamp();
   const data = await getHecomClienteDashboard(selected.id, {
     includeCampaignSpend: false,
     includeDailySpend: false,
     includeCreativos: true,
   });
-  const dashboardMs = Date.now() - tDashboard;
+  const dashboardMs = readTimestamp() - tDashboard;
 
   if (!data) {
     return (
@@ -61,14 +65,14 @@ export default async function CreativeAnalyzerPage() {
     .map((a) => a.advertiserId)
     .filter((id): id is string => Boolean(id));
 
-  const tAccounts = Date.now();
+  const tAccounts = readTimestamp();
   const accounts = session.organizationId
     ? await listCreativeAccountOptions(session.organizationId, {
         hecomClienteId: selected.id,
         advertiserIds: hecomAdvertiserIds,
       })
     : [];
-  const accountsMs = Date.now() - tAccounts;
+  const accountsMs = readTimestamp() - tAccounts;
   const liveStatus = session.organizationId
     ? await fetchAdvertiserStatusKinds({
         organizationId: session.organizationId,
@@ -101,7 +105,7 @@ export default async function CreativeAnalyzerPage() {
     adAccountIds: accounts.map((a) => a.id),
   };
 
-  const tLists = Date.now();
+  const tLists = readTimestamp();
   const [assets, rejectedDrafts, readyDrafts] = session.organizationId
     ? await Promise.all([
         listOrganizationCreativeAssets(session.organizationId, {
@@ -139,8 +143,8 @@ export default async function CreativeAnalyzerPage() {
     ...rejectedReady,
     ...readyDrafts.filter((d) => !seen.has(d.id)),
   ];
-  const listsMs = Date.now() - tLists;
-  const totalMs = Date.now() - t0;
+  const listsMs = readTimestamp() - tLists;
+  const totalMs = readTimestamp() - t0;
 
   console.info("[creative-analyzer] entry_timing", {
     clienteId: selected.id,
@@ -171,7 +175,7 @@ export default async function CreativeAnalyzerPage() {
     );
 
     after(async () => {
-      const bg0 = Date.now();
+      const bg0 = readTimestamp();
       let syncAdvertiserIds: string[] = [];
       try {
         const sync = await syncApprovedAdAccountsForCliente({
@@ -224,7 +228,7 @@ export default async function CreativeAnalyzerPage() {
         bgAdvertiserIds.length > 0 ? bgAdvertiserIds : advertiserIds;
       if (discoverIds.length === 0) return;
 
-      const discover0 = Date.now();
+      const discover0 = readTimestamp();
       try {
         const result = await discoverRejectedAdsForOrganization({
           organizationId,
@@ -232,8 +236,8 @@ export default async function CreativeAnalyzerPage() {
           adAccountIds: accountRows.map((a) => a.id),
         });
         console.info("[creative-analyzer] bg_discover", {
-          discoverMs: Date.now() - discover0,
-          bgTotalMs: Date.now() - bg0,
+          discoverMs: readTimestamp() - discover0,
+          bgTotalMs: readTimestamp() - bg0,
           advertisers: result.advertisers,
           listed: result.listed,
           upserted: result.upserted,
@@ -243,7 +247,7 @@ export default async function CreativeAnalyzerPage() {
       } catch (error) {
         console.warn("[creative-analyzer] bg_discover", {
           error: error instanceof Error ? error.message : "unknown",
-          discoverMs: Date.now() - discover0,
+          discoverMs: readTimestamp() - discover0,
         });
       }
 
