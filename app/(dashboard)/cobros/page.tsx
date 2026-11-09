@@ -1,4 +1,6 @@
 import { dashboardClasses } from "@/lib/ui/dashboard-classes";
+import { Suspense } from "react";
+import { WalletAgreementMovements } from "@/features/payments/components/WalletAgreementMovements";
 import {
   CLIENT_COBROS_FROM_MONTH,
   ClienteScopedCobros,
@@ -58,6 +60,9 @@ export default async function CobrosPage() {
 
   return (
     <div className={dashboardClasses.page}>
+      <Suspense fallback={null}>
+        <WalletAgreementMovements userId={session.id} />
+      </Suspense>
       <ClienteScopedCobros
         data={data}
         // Clientes y «ver como cliente» pueden revisar desde junio de 2026.

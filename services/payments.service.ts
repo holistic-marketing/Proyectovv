@@ -45,7 +45,7 @@ const LEDGER_TYPES_BY_TAB: Record<Exclude<PaymentTabKey, "assignment">, string[]
     "ad_account_budget_reserved",
     "ad_account_budget_released",
   ],
-  "wallet-tx": ["deposit_confirmed", "legacy_wallet_available_opening"],
+  "wallet-tx": ["deposit_confirmed", "legacy_wallet_available_opening", "historical_balance_settlement"],
   refunds: ["ad_account_refund_to_wallet", "journal_reversal"],
 };
 
@@ -679,6 +679,8 @@ function mapJournalTypeLabel(journalType: string): string {
   switch (journalType) {
     case "deposit_confirmed":
       return "Depósito confirmado";
+    case "historical_balance_settlement":
+      return "Abono por acuerdo de saldo histórico a favor";
     case "allocation_to_ad_account":
       return "Asignación a cuenta publicitaria";
     case "ad_account_budget_reserved":
