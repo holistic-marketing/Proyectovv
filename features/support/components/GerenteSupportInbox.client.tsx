@@ -265,6 +265,8 @@ export function GerenteSupportInbox() {
   }, [statusFilter]);
 
   useEffect(() => {
+    // Cargador intencional (carga del inbox al montar y al cambiar el filtro): activa loading/limpia error y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader
     void loadTickets();
   }, [loadTickets]);
 

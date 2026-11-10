@@ -174,6 +174,8 @@ export function SupportChatWidget({
   // Al abrir: ir directo al hilo (sin menú FAQ).
   useEffect(() => {
     if (!isOpen) return;
+    // Cargador intencional (carga del hilo al abrir el chat): activa loading/limpia error y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader
     void loadConversation({ force: !conversationLoaded });
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps -- open trigger
 

@@ -260,6 +260,8 @@ export function SupportPageClient({
   }, [buildGreeting, openTicket, t]);
 
   useEffect(() => {
+    // Cargador intencional (carga inicial del chat de soporte): activa loading/limpia error y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader
     void bootChat();
   }, [bootChat]);
 
