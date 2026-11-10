@@ -55,6 +55,9 @@ export function HomeScreenAppBanner() {
     const standalone = isStandalone();
     if (ios && !standalone) {
       if (readFlag(DISMISS_KEY)) return;
+      // Detección de entorno solo-cliente al montar (user agent, standalone,
+      // localStorage): no existe en el servidor, así que va en el efecto.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode("install");
       return;
     }
