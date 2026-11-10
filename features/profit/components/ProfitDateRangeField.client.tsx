@@ -110,8 +110,12 @@ export function ProfitDateRangeField({
 
   const right = addMonths(leftY, leftM, 1);
 
-  useEffect(() => {
-    if (!open) return;
+  // Único punto de apertura: posiciona el mes visible y limpia la selección en curso.
+  function toggleOpen() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
     const p = parseYmd(from) ?? parseYmd(to);
     if (p) {
       setLeftY(p.y);
@@ -119,7 +123,8 @@ export function ProfitDateRangeField({
     }
     setDraftStart(null);
     setHoverYmd(null);
-  }, [open, from, to]);
+    setOpen(true);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -284,7 +289,7 @@ export function ProfitDateRangeField({
         id={id}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className={`mt-1.5 flex h-11 w-full items-center justify-between gap-2 rounded-xl border bg-[#faf8f5] px-3.5 text-left text-[13px] font-medium tabular-nums text-[#1c1917] outline-none transition hover:bg-white focus:bg-white focus:ring-2 focus:ring-[var(--auth-accent)]/25 ${
           open
             ? "border-[var(--auth-accent)] bg-white"
