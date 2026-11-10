@@ -169,18 +169,17 @@ export function SupportPageClient({
     [greetingText, supportName],
   );
 
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 1 && prev[0]?.id === "support-greeting") {
-        return [buildGreeting()];
-      }
-      return prev.map((msg) =>
-        msg.id === "support-greeting"
+  // El saludo se resuelve al mostrar, con idioma y nombre actuales (sin efecto que reescriba el estado).
+  const displayMessages = useMemo(
+    () =>
+      messages.map((msg) =>
+        msg.id === "support-greeting" &&
+        (msg.text !== greetingText || msg.senderName !== supportName)
           ? { ...msg, text: greetingText, senderName: supportName }
           : msg,
-      );
-    });
-  }, [buildGreeting, greetingText, supportName]);
+      ),
+    [messages, greetingText, supportName],
+  );
 
   const selectedCategory = holisticFaqCategories.find(
     (c) => c.id === selectedCategoryId,
@@ -572,7 +571,7 @@ export function SupportPageClient({
   const chatColumn = (
     <div className="dashboard-surface-card h-full min-h-[560px] overflow-hidden rounded-[1.25rem] shadow-[0_16px_40px_rgb(15_23_42_/_0.06)]">
       <ChatConversation
-        messages={messages}
+        messages={displayMessages}
         inputValue={inputValue}
         sending={sending}
         loading={loadingConversation}
