@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
+import { useNow } from "@/hooks/useNow";
 import { apiClient } from "@/lib/api/api-client.client";
 import { useAppFormatter } from "@/lib/i18n/use-app-formatter";
 
@@ -37,6 +38,7 @@ export function NotificationsDropdown() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const now = useNow();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.readAt).length,
@@ -47,7 +49,7 @@ export function NotificationsDropdown() {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return t("now");
 
-    const diffMs = Date.now() - date.getTime();
+    const diffMs = now - date.getTime();
     const diffMinutes = Math.max(0, Math.floor(diffMs / 60_000));
     if (diffMinutes < 1) return t("now");
     if (diffMinutes < 60) return t("minutesAgo", { count: diffMinutes });
