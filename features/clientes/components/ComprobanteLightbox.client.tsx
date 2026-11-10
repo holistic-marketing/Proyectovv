@@ -15,13 +15,18 @@ const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.25;
 
-export function ComprobanteLightbox({
-  open,
+export function ComprobanteLightbox({ open, ...props }: ComprobanteLightboxProps) {
+  if (!open || typeof document === "undefined") return null;
+  // Solo montado mientras está abierto: el zoom vuelve a 1 al cerrar (desmontaje).
+  return <ComprobanteLightboxBody {...props} />;
+}
+
+function ComprobanteLightboxBody({
   url,
   title,
   kind,
   onClose,
-}: ComprobanteLightboxProps) {
+}: Omit<ComprobanteLightboxProps, "open">) {
   const [zoom, setZoom] = useState(1);
 
   const zoomOut = useCallback(() => {
@@ -35,10 +40,6 @@ export function ComprobanteLightbox({
   const zoomReset = useCallback(() => setZoom(1), []);
 
   useEffect(() => {
-    if (!open) {
-      setZoom(1);
-      return;
-    }
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -66,9 +67,7 @@ export function ComprobanteLightbox({
       document.body.style.overflow = previous;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onClose, zoomIn, zoomOut, zoomReset]);
-
-  if (!open || typeof document === "undefined") return null;
+  }, [onClose, zoomIn, zoomOut, zoomReset]);
 
   const isImage = kind === "image" || kind === "unknown";
 
