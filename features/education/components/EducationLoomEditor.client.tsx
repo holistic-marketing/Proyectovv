@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useObjectUrl } from "@/hooks/useObjectUrl";
 import {
   clearEducationVideoAction,
   createEducationLessonAction,
@@ -293,12 +294,32 @@ function LessonEditor({
   const [error, setError] = useState<string | null>(null);
   const category = educationCategoryById(lesson.categoryId);
 
-  useEffect(() => {
+  // Ajuste durante el render: si el servidor trae otros valores de esta lección
+  // (p. ej. tras guardar + router.refresh), se copian a los campos. No toca
+  // feedback, fileEpoch ni los archivos elegidos.
+  const [prevLesson, setPrevLesson] = useState({
+    title: lesson.title,
+    loomUrl: lesson.loomUrl,
+    recommended: lesson.recommended,
+    active: lesson.active,
+  });
+  if (
+    prevLesson.title !== lesson.title ||
+    prevLesson.loomUrl !== lesson.loomUrl ||
+    prevLesson.recommended !== lesson.recommended ||
+    prevLesson.active !== lesson.active
+  ) {
+    setPrevLesson({
+      title: lesson.title,
+      loomUrl: lesson.loomUrl,
+      recommended: lesson.recommended,
+      active: lesson.active,
+    });
     setTitle(lesson.title);
     setLoomUrl(lesson.loomUrl ?? "");
     setRecommended(lesson.recommended);
     setActive(lesson.active);
-  }, [lesson.title, lesson.loomUrl, lesson.recommended, lesson.active]);
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -622,20 +643,6 @@ function ActiveToggle({
         : t(team ? "team.activeOff" : "activeOff")}
     </label>
   );
-}
-
-function useObjectUrl(file: File | null): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!file) {
-      setUrl(null);
-      return;
-    }
-    const next = URL.createObjectURL(file);
-    setUrl(next);
-    return () => URL.revokeObjectURL(next);
-  }, [file]);
-  return url;
 }
 
 function PosterField({
