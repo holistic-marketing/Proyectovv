@@ -10,11 +10,19 @@ const PUSH_TYPES = new Set([
   "payment_bank_confirmed",
 ]);
 
-type PushPayload = {
+export type PushPayload = {
   title: string;
   body?: string | null;
   url?: string | null;
+  /** Mismo tag = el aviso nuevo reemplaza al anterior en vez de apilarse. */
+  tag?: string | null;
 };
+
+export type PushDeliveryStats = { devices: number; delivered: number; failed: number };
+
+const EMPTY_STATS: PushDeliveryStats = { devices: 0, delivered: 0, failed: 0 };
+/** Envíos en paralelo por tanda: suficiente para cientos sin saturar la función. */
+const SEND_BATCH = 50;
 
 function vapidReady(): boolean {
   return Boolean(serverEnv.vapidPublicKey && serverEnv.vapidPrivateKey);
@@ -30,40 +38,70 @@ function ensureVapid(): boolean {
   return true;
 }
 
-async function deliver(userIds: string[], payload: PushPayload): Promise<void> {
-  if (!ensureVapid() || userIds.length === 0) return;
+async function deliver(userIds: string[], payload: PushPayload): Promise<PushDeliveryStats> {
+  if (!ensureVapid() || userIds.length === 0) return EMPTY_STATS;
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("web_push_subscriptions")
-    .select("id, endpoint, p256dh, auth")
-    .in("user_id", userIds);
-  if (error || !data?.length) return;
+  const rows: Array<{ id: string; endpoint: string; p256dh: string; auth: string }> = [];
+  for (let i = 0; i < userIds.length; i += 200) {
+    const { data, error } = await admin
+      .from("web_push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .in("user_id", userIds.slice(i, i + 200));
+    if (error) {
+      console.error("[web-push] no se pudieron leer las suscripciones", error);
+      continue;
+    }
+    rows.push(...(data ?? []));
+  }
+  if (rows.length === 0) return EMPTY_STATS;
+
+  const message = JSON.stringify({
+    title: payload.title,
+    body: payload.body ?? "",
+    url: payload.url || "/overview",
+    tag: payload.tag || undefined,
+  });
 
   const dead: string[] = [];
-  await Promise.all(
-    data.map(async (row) => {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: row.endpoint,
-            keys: { p256dh: row.p256dh, auth: row.auth },
-          },
-          JSON.stringify({
-            title: payload.title,
-            body: payload.body ?? "",
-            url: payload.url || "/overview",
-          }),
-        );
-      } catch (err) {
-        const status = (err as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) dead.push(row.id);
-        else console.error("[web-push] envío falló", status ?? err);
-      }
-    }),
-  );
+  let delivered = 0;
+  let failed = 0;
+  for (let i = 0; i < rows.length; i += SEND_BATCH) {
+    await Promise.all(
+      rows.slice(i, i + SEND_BATCH).map(async (row) => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
+            message,
+            { TTL: 60 * 60 * 24 * 3, urgency: "normal" },
+          );
+          delivered += 1;
+        } catch (err) {
+          failed += 1;
+          const status = (err as { statusCode?: number }).statusCode;
+          if (status === 404 || status === 410) dead.push(row.id);
+          else console.error("[web-push] envío falló", status ?? err);
+        }
+      }),
+    );
+  }
 
   if (dead.length > 0) {
     await admin.from("web_push_subscriptions").delete().in("id", dead);
+  }
+  return { devices: rows.length, delivered, failed };
+}
+
+/** Para avisos masivos: devuelve a cuántos dispositivos llegó. */
+export async function sendWebPushWithStats(
+  userIds: string[],
+  payload: PushPayload,
+): Promise<PushDeliveryStats> {
+  const ids = [...new Set(userIds.map((id) => String(id ?? "").trim()).filter(Boolean))];
+  try {
+    return await deliver(ids, payload);
+  } catch (error) {
+    console.error("[web-push] no se pudo enviar", error);
+    return EMPTY_STATS;
   }
 }
 

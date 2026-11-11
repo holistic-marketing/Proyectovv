@@ -38,3 +38,25 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true });
 }
+
+/** Quita los avisos de este dispositivo (el cliente los apaga desde la campanita). */
+export async function DELETE(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  }
+  const body = (await request.json().catch(() => null)) as { endpoint?: string } | null;
+  const endpoint = body?.endpoint?.trim() ?? "";
+  if (!endpoint) {
+    return NextResponse.json({ error: "Falta el dispositivo." }, { status: 400 });
+  }
+  const { error } = await createAdminClient()
+    .from("web_push_subscriptions")
+    .delete()
+    .eq("user_id", session.id)
+    .eq("endpoint", endpoint);
+  if (error) {
+    return NextResponse.json({ error: "No se pudo quitar." }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

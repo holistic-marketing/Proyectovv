@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
+import { PushDeviceToggle } from "@/features/push/PushDeviceToggle.client";
 import { apiClient } from "@/lib/api/api-client.client";
 import { useAppFormatter } from "@/lib/i18n/use-app-formatter";
 
@@ -73,6 +74,19 @@ export function NotificationsDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Carga al entrar para que el punto rojo avise sin tener que abrir la campanita.
+  useEffect(() => {
+    let cancelled = false;
+    apiClient<NotificationsResponse>(routes.api.notifications)
+      .then((data) => {
+        if (!cancelled) setNotifications(data.notifications ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function loadNotifications() {
     setLoading(true);
     setError(null);
@@ -130,7 +144,7 @@ export function NotificationsDropdown() {
   }
 
   return (
-    <div ref={dropdownRef} className="relative hidden md:block">
+    <div ref={dropdownRef} className="relative">
       <button
         type="button"
         onClick={() => {
@@ -161,7 +175,7 @@ export function NotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-40 mt-3 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-[var(--border-subtle)] bg-white shadow-2xl shadow-[rgb(20_18_16_/_0.14)]">
+        <div className="fixed inset-x-3 top-[calc(4rem+env(safe-area-inset-top))] z-40 overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-auto md:mt-3 md:w-[360px] rounded-3xl border border-[var(--border-subtle)] bg-white shadow-2xl shadow-[rgb(20_18_16_/_0.14)]">
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3">
             <div>
               <p className="text-sm font-black text-[#141210]">{t("title")}</p>
@@ -182,6 +196,8 @@ export function NotificationsDropdown() {
               {t("refresh")}
             </button>
           </div>
+
+          <PushDeviceToggle />
 
           <div className="max-h-[420px] overflow-y-auto p-2">
             {loading && notifications.length === 0 ? (

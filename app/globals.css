@@ -1195,3 +1195,13 @@ html[data-theme-direction="light"]::view-transition-new(root) {
   aspect-ratio: auto;
   border-radius: 0;
 }
+
+/* Invitación a activar avisos: entra suave desde arriba. */
+@keyframes push-invite-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.push-invite { animation: push-invite-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .push-invite { animation: none; }
+}
