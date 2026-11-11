@@ -32,6 +32,8 @@ type ClientRow = {
   tiktokAdvertiserId?: string | null;
   tiktokAccounts?: TiktokAccount[];
   billingModality?: "credito" | "prepago";
+  /** % de comisión Hecom del cliente (se cambia en su ficha). */
+  defaultFee?: number | null;
 };
 
 type ViewMode = "list" | "cards";
@@ -595,6 +597,18 @@ function ClientActions({
           {busy ? "Eligiendo…" : "Operar este cliente"}
         </button>
       )}
+      {staffPicker ? (
+        <Link
+          href={`/clientes/${client.id}#comision`}
+          title="Cambiar la comisión de este cliente"
+          className={`${compact ? "" : "w-full"} inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[var(--auth-accent)]/30 bg-[var(--auth-accent-soft)] px-3 text-[12px] font-semibold text-[var(--auth-accent)] transition-colors hover:border-[var(--auth-accent)]`}
+        >
+          Comisión {client.defaultFee != null ? `${client.defaultFee} %` : "—"}
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+          </svg>
+        </Link>
+      ) : null}
       <Link
         href={`/clientes/${client.id}`}
         className={`${compact ? "px-1.5" : "text-center"} text-[12px] font-semibold text-[var(--auth-text-muted)] transition-colors hover:text-[var(--auth-accent)]`}

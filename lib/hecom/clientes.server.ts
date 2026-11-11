@@ -137,7 +137,12 @@ function mapClienteRow(
   };
 }
 
-export async function listHecomClientes(): Promise<{
+/**
+ * `onlyIds`: si viene, se esperan en paralelo con la lista y solo se devuelven
+ * (y se les cargan las cuentas TikTok a) esos clientes. Evita bajar las cuentas
+ * de los ~220 clientes del CRM cuando la pantalla muestra unos pocos.
+ */
+export async function listHecomClientes(options?: { onlyIds?: Promise<Set<string>> }): Promise<{
   source: "hecom_live" | "hecom_backup";
   hecomConfigured: boolean;
   clientes: HecomCliente[];
@@ -147,10 +152,11 @@ export async function listHecomClientes(): Promise<{
   if (!cfg.configured) {
     const backup = await listHecomClientesFromBackup();
     if (backup) {
+      const only = options?.onlyIds ? await options.onlyIds : null;
       return {
         source: "hecom_backup",
         hecomConfigured: false,
-        clientes: backup.clientes,
+        clientes: only ? backup.clientes.filter((c) => only.has(c.id)) : backup.clientes,
         backupPath: backup.path,
       };
     }
@@ -183,6 +189,11 @@ export async function listHecomClientes(): Promise<{
     rows = (basic.data ?? []) as Record<string, unknown>[];
   } else {
     rows = (full.data ?? []) as Record<string, unknown>[];
+  }
+
+  if (options?.onlyIds) {
+    const only = await options.onlyIds;
+    rows = rows.filter((row) => only.has(String(row.id)));
   }
 
   const accountsByClient = await loadTiktokAccountsByClient(

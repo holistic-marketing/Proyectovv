@@ -16,6 +16,35 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
+ * La lista de gerencia es la misma para todo el equipo: se guarda 30 s en la
+ * instancia para que volver a /clientes sea instantáneo. Un cliente nuevo
+ * aparece como mucho medio minuto después.
+ */
+const STAFF_LIST_TTL_MS = 30_000;
+let staffListCache: {
+  at: number;
+  value: Promise<Awaited<ReturnType<typeof listHecomClientes>>>;
+} | null = null;
+
+function listStaffClientes() {
+  if (staffListCache && Date.now() - staffListCache.at < STAFF_LIST_TTL_MS) {
+    return staffListCache.value;
+  }
+  // Los ids de AdsHolistic y la lista de Hecom se piden a la vez; las cuentas
+  // TikTok se cargan solo para los clientes que se muestran.
+  const adsIds = listAdsHolisticClienteIds();
+  adsIds.catch(() => {});
+  const value = listHecomClientes({ onlyIds: adsIds });
+  const entry = { at: Date.now(), value };
+  staffListCache = entry;
+  // Si falla, no se guarda: el siguiente intento vuelve a consultar.
+  value.catch(() => {
+    if (staffListCache === entry) staffListCache = null;
+  });
+  return value;
+}
+
+/**
  * Lista clientes con vínculo de usuario o pago exitoso en AdsHolistic.
  * Una ficha del CRM Hecom, por sí sola, no acredita uso de AdsHolistic.
  * Con OTP activo: usuario no-admin solo ve clientes de SU email.
@@ -63,9 +92,8 @@ export async function GET() {
         detail: `${clientes.length} cliente(s) para ${session.email}`,
       });
     } else {
-      const listed = await listHecomClientes();
-      const adsIds = await listAdsHolisticClienteIds();
-      clientes = listed.clientes.filter(cliente => adsIds.has(cliente.id));
+      const listed = await listStaffClientes();
+      clientes = listed.clientes;
       source = listed.source;
       steps.push({
         step: hecomCfg.configured ? "hecom_clientes_live" : "hecom_clientes_backup",
@@ -107,6 +135,7 @@ export async function GET() {
         tiktokAdvertiserId: c.tiktokAdvertiserId,
         tiktokAccounts: c.tiktokAccounts,
         billingModality: resolveHecomBillingModality(c),
+        defaultFee: c.tiktokDefaultFee,
       };
     });
 

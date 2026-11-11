@@ -195,7 +195,11 @@ export default async function ClienteVistaPage({
         </div>
       </div>
 
-      {isStaff ? <ClienteFeeCard clienteId={cliente.id} currentFee={cliente.tiktokDefaultFee} /> : null}
+      {isStaff ? (
+        <div id="comision" className="scroll-mt-24">
+          <ClienteFeeCard clienteId={cliente.id} currentFee={cliente.tiktokDefaultFee} />
+        </div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
