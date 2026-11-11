@@ -13,7 +13,7 @@ test("pago manual sin comprobante pide subirlo; con comprobante queda en revisi�
 });
 
 test("Yape pendiente pide pagar; reemplazado por uno nuevo no se confunde con cancelado", () => {
-  assert.equal(rechargeState({ ...base, status: "requires_payment", provider: "cobrana", metadata: {} }), "pay_yape");
+  assert.equal(rechargeState({ ...base, status: "requires_payment", provider: "cobrana", metadata: { cobrana_code: "123" } }), "pay_yape");
   assert.equal(
     rechargeState({ ...base, status: "cancelled", provider: "cobrana", metadata: { cobrana_cancelled_reason: "superseded" } }),
     "replaced",
@@ -77,4 +77,8 @@ test("cripto con pago parcial: dice cuántos USDT faltaron, redondeado hacia arr
   assert.equal(cryptoMissingUsdt({ ...base, metadata: { ...base.metadata, crypto_actually_paid: 108.775182 } }), null);
   // 0.301 → 0.31: lo que mande tiene que alcanzar.
   assert.equal(cryptoMissingUsdt({ ...base, metadata: { ...base.metadata, crypto_actually_paid: 108.474182 } }), 0.31);
+});
+
+test("Yape sin código confirmado no pide pagar", () => {
+  for (const status of ["created", "requires_payment", "processing"]) assert.equal(rechargeState({...base, status, provider:"cobrana", metadata:{cobrana_checkout_error:true}}), "processing");
 });

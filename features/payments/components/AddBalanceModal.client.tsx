@@ -96,7 +96,7 @@ interface IntentPollResponse {
 
 const MIN_AMOUNT = 1;
 const MAX_AMOUNT = 100_000;
-const DEFAULT_FX = 3.48;
+const DEFAULT_FX = 0; // No cotizar soles hasta obtener SBS.
 
 const subscribeToNothing = () => () => {};
 
@@ -190,12 +190,14 @@ export function AddBalanceModal({
 
   useEffect(() => {
     if (!open || !isCobrana) return;
+    let cancelled = false;
     void apiClient<{
       fxRateUsdPen: number;
       fxSource?: string;
       fxAsOf?: string | null;
     }>("/api/payments/manual/config")
       .then((cfg) => {
+        if (cancelled) return;
         if (Number.isFinite(cfg.fxRateUsdPen) && cfg.fxRateUsdPen > 0) {
           setFxRate(cfg.fxRateUsdPen);
         }
@@ -211,8 +213,9 @@ export function AddBalanceModal({
         }
       })
       .catch(() => {
-        /* keep default FX */
+        if (!cancelled) { setFxRate(0); setError("No pudimos consultar el tipo de cambio SBS. Cierra y vuelve a abrir para reintentar."); }
       });
+    return () => { cancelled = true; };
   }, [open, isCobrana, t]);
 
   useEffect(() => {
@@ -287,6 +290,7 @@ export function AddBalanceModal({
   // La red TRC20 rechaza montos bajos, así que el piso sube con Cripto.
   const minAmount = isCrypto ? CRYPTO_MIN_USD : MIN_AMOUNT;
   const isValidAmount =
+    (!isCobrana || fxRate > 0) &&
     Number.isFinite(parsedAmount) &&
     parsedAmount >= minAmount &&
     parsedAmount <= MAX_AMOUNT;
@@ -847,7 +851,7 @@ export function AddBalanceModal({
                 <Button
                   onClick={() => void handleConfirm()}
                   disabled={
-                    loading ||
+                    loading || (isCobrana && fxRate <= 0) ||
                     (isCobrana &&
                       needsCustomerDocument &&
                       !normalizeYapeDocument(customerDocument).ok)

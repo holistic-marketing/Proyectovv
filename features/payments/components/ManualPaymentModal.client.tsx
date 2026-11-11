@@ -164,18 +164,11 @@ export function ManualPaymentModal({
 
   useEffect(() => {
     if (!open) return;
-    void apiClient<ManualConfig>(
-      endpoints?.config ?? "/api/payments/manual/config",
-    )
-      .then(setConfig)
-      .catch(() =>
-        setConfig({
-          fxRateUsdPen: 3.48,
-          bankAccounts: [],
-          bankAccountsUsd: [],
-          aiEnabled: false,
-        }),
-      );
+    let cancelled = false;
+    void apiClient<ManualConfig>(endpoints?.config ?? "/api/payments/manual/config")
+      .then((value) => { if (!cancelled) setConfig(value); })
+      .catch(() => { if (!cancelled) { setConfig(null); setError("No pudimos consultar el tipo de cambio SBS. Cierra y vuelve a abrir para reintentar."); } });
+    return () => { cancelled = true; };
   }, [open, endpoints?.config]);
 
   useEffect(() => {
@@ -189,7 +182,7 @@ export function ManualPaymentModal({
   const effectiveFee = paysDebt ? 0 : feePercent;
   const minUsd = paysDebt ? MIN_DEBT_USD : MIN_USD;
   const parsedAmount = Number.parseFloat(amount);
-  const rate = config?.fxRateUsdPen ?? 3.48;
+  const rate = config?.fxRateUsdPen ?? 0;
   const fxLabel = useMemo(() => {
     const src = (config?.fxSource ?? "").toLowerCase();
     if (src === "sbs") {
@@ -200,6 +193,7 @@ export function ManualPaymentModal({
     return t("addBalance.fxReferential");
   }, [config, t]);
   const isValidAmount =
+    rate > 0 &&
     Number.isFinite(parsedAmount) &&
     parsedAmount >= minUsd &&
     parsedAmount <= MAX_USD;

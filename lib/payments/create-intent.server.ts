@@ -1,3 +1,4 @@
+import { CobranaApiError } from "@/lib/payments/cobrana/client.server";
 import { randomUUID } from "node:crypto";
 import { assertStripePaymentsEnabled } from "./stripe-policy";
 import type { SessionUser } from "@/types/auth";
@@ -398,6 +399,18 @@ export async function createPaymentIntentForSession(
       customer_full_name: cobranaCustomer?.fullName ?? undefined,
       customer_phone: cobranaCustomer?.phone ?? undefined,
     },
+  }).catch(async (error: unknown) => {
+    if (isCobrana) {
+      // Provider errors may be ambiguous. Keep the intent reconcilable; never credit or retry blindly.
+      await mergePaymentIntentMetadata(intent.id, {
+        cobrana_checkout_error: true,
+        cobrana_checkout_error_at: new Date().toISOString(),
+        cobrana_checkout_http_status: error instanceof CobranaApiError ? error.httpStatus : null,
+        cobrana_checkout_request_id: error instanceof CobranaApiError ? error.requestId : null,
+      });
+      console.error("[create-intent] cobrana_checkout_failed", { paymentIntentId: intent.id, httpStatus: error instanceof CobranaApiError ? error.httpStatus : null });
+    }
+    throw error;
   });
 
   // Manual siempre voucher. Cripto solo por checkout NOWPayments.

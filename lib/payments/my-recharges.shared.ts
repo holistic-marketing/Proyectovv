@@ -57,7 +57,9 @@ export function rechargeState(intent: IntentLike): RechargeState {
     return m.cobrana_cancelled_reason === "superseded" ? "replaced" : "cancelled";
   }
   if (!open) return "processing";
-  if (intent.provider === "cobrana") return "pay_yape";
+  if (intent.provider === "cobrana") {
+    return typeof m.cobrana_code === "string" && m.cobrana_code.trim() ? "pay_yape" : "processing";
+  }
   const voucherFlow =
     intent.provider === "manual" || (intent.provider === "crypto" && m.crypto_mode !== "nowpayments");
   if (voucherFlow) {

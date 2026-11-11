@@ -4,6 +4,7 @@ import { resolveHolisticUsdPenRate } from "@/lib/payments/fx-rate.server";
 // Public quote only: the same resolver used when creating payment intents.
 // No customer, bank account, payment or authentication data is returned.
 export async function GET() {
+  try {
   const quote = await resolveHolisticUsdPenRate();
   return NextResponse.json({
     provider: "adsholistic",
@@ -13,4 +14,7 @@ export async function GET() {
     asOf: quote.asOf,
     queriedAt: new Date().toISOString(),
   }, { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300" } });
+  } catch {
+    return NextResponse.json({ error: "Tipo de cambio SBS temporalmente no disponible.", code: "FX_UNAVAILABLE" }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 }

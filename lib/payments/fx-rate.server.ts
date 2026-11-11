@@ -9,12 +9,12 @@ import { serverEnv } from "@/lib/env/env.server";
  *
  * Cuidados:
  * - No depende de APIs de terceros de pago.
- * - Valida rango vs fallback env (± tolerancia).
- * - Cache en memoria; si falla o es raro → HOLISTIC_USD_PEN_RATE.
+ * - Valida rango y antigüedad de la publicación oficial.
+ * - Nunca sustituye la cotización oficial por un valor fijo.
  * - El TC se congela en el intent (`fx_rate_usd_pen`); no recalcular a mitad de pago.
  */
 
-export type FxRateSource = "sbs" | "env";
+export type FxRateSource = "sbs";
 
 export type HolisticFxQuote = {
   usdPen: number;
@@ -31,7 +31,7 @@ type CacheEntry = {
 };
 
 const BCRP_SERIES_SBS_SELL = "PD04640PD";
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+const CACHE_TTL_MS = 15 * 60 * 1000; // consultar publicaciones nuevas cada 15 minutos
 const FETCH_TIMEOUT_MS = 8_000;
 
 let memoryCache: CacheEntry | null = null;
@@ -41,48 +41,15 @@ function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
 }
 
-function envFallbackRate(): number {
-  const raw = serverEnv.holisticUsdPenRate;
-  if (!Number.isFinite(raw) || raw <= 0) return 3.37;
-  return round4(raw);
-}
-
-function absoluteBounds(): { min: number; max: number } {
-  return {
-    min: serverEnv.holisticUsdPenMin,
-    max: serverEnv.holisticUsdPenMax,
-  };
-}
-
-function relativeOk(rate: number, fallback: number): boolean {
-  const tol = serverEnv.holisticUsdPenTolerancePct;
-  if (!(tol > 0 && tol < 1)) return true;
-  const lo = fallback * (1 - tol);
-  const hi = fallback * (1 + tol);
-  return rate >= lo && rate <= hi;
+export class FxRateUnavailableError extends Error {
+  constructor() {
+    super("No pudimos obtener el tipo de cambio SBS actualizado. Intenta nuevamente en unos minutos; no se ha creado un cobro con un tipo de cambio fijo.");
+    this.name = "FxRateUnavailableError";
+  }
 }
 
 function withinAbsolute(rate: number): boolean {
-  const { min, max } = absoluteBounds();
-  return rate >= min && rate <= max;
-}
-
-function applySpread(sell: number): number {
-  const spread = serverEnv.holisticUsdPenSpread;
-  if (!Number.isFinite(spread) || spread === 0) return round4(sell);
-  return round4(sell + spread);
-}
-
-function envQuote(): HolisticFxQuote {
-  const usdPen = applySpread(envFallbackRate());
-  return {
-    usdPen: round4(usdPen),
-    source: "env",
-    asOf: null,
-    sellRaw: null,
-    spreadApplied: serverEnv.holisticUsdPenSpread || 0,
-    cached: false,
-  };
+  return rate >= serverEnv.holisticUsdPenMin && rate <= serverEnv.holisticUsdPenMax;
 }
 
 /** Parse BCRP period names like "04.Set.26" / "25.Ago.26". */
@@ -125,7 +92,7 @@ function parseSellValue(raw: unknown): number | null {
   if (raw == null) return null;
   const s = String(raw).trim().replace(",", ".");
   if (!s || /^n\.?d\.?$/i.test(s)) return null;
-  const n = Number.parseFloat(s);
+  const n = Number(s);
   if (!Number.isFinite(n) || n <= 0) return null;
   return n;
 }
@@ -176,7 +143,11 @@ async function fetchSbsSellFromBcrp(): Promise<{
       const p = periods[i];
       const sell = parseSellValue(p?.values?.[0]);
       if (sell == null) continue;
-      const asOf = parseBcrpPeriodName(String(p?.name ?? "")) ?? toStr;
+      const asOf = parseBcrpPeriodName(String(p?.name ?? ""));
+      if (!asOf) continue;
+      const age = Date.now() - Date.parse(`${asOf}T12:00:00Z`);
+      // Includes weekends/holidays, but never trusts old or future publications.
+      if (age < -24 * 60 * 60 * 1000 || age > 7 * 24 * 60 * 60 * 1000) continue;
       return { sell, asOf };
     }
     console.warn("[fx-rate] BCRP sin valores numéricos recientes");
@@ -192,50 +163,21 @@ async function fetchSbsSellFromBcrp(): Promise<{
   }
 }
 
-function acceptOrReject(sell: number): boolean {
-  const fallback = envFallbackRate();
-  if (!withinAbsolute(sell)) {
-    console.warn("[fx-rate] fuera de rango absoluto", { sell, ...absoluteBounds() });
-    return false;
-  }
-  if (!relativeOk(sell, fallback)) {
-    console.warn("[fx-rate] fuera de tolerancia vs env", {
-      sell,
-      fallback,
-      tol: serverEnv.holisticUsdPenTolerancePct,
-    });
-    return false;
-  }
-  return true;
-}
-
 async function loadFreshQuote(): Promise<HolisticFxQuote> {
-  if (serverEnv.fxRateSource === "manual") {
-    return envQuote();
-  }
-
   const remote = await fetchSbsSellFromBcrp();
-  if (!remote || !acceptOrReject(remote.sell)) {
-    return envQuote();
-  }
-
-  const withSpread = applySpread(remote.sell);
-  if (!acceptOrReject(withSpread)) {
-    return envQuote();
-  }
-
+  if (!remote || !withinAbsolute(remote.sell)) throw new FxRateUnavailableError();
   return {
-    usdPen: round4(withSpread),
+    usdPen: round4(remote.sell),
     source: "sbs",
     asOf: remote.asOf,
     sellRaw: round4(remote.sell),
-    spreadApplied: serverEnv.holisticUsdPenSpread || 0,
+    spreadApplied: 0,
     cached: false,
   };
 }
 
 /**
- * Resuelve TC con refresh controlado (cache 6h).
+ * Resuelve TC con refresh controlado (cache 15 min).
  * Usar al cotizar intents / config de pagos.
  */
 export async function resolveHolisticUsdPenRate(): Promise<HolisticFxQuote> {
@@ -258,7 +200,7 @@ export async function resolveHolisticUsdPenRate(): Promise<HolisticFxQuote> {
 }
 
 /**
- * Sync: cache fresca o env. No hace red.
+ * Sync: solo cache oficial fresca. No hace red.
  * Prefiere `resolveHolisticUsdPenRate` al crear intents.
  */
 export function getHolisticUsdPenRateSync(): number {
@@ -268,5 +210,5 @@ export function getHolisticUsdPenRateSync(): number {
   ) {
     return memoryCache.quote.usdPen;
   }
-  return envQuote().usdPen;
+  throw new FxRateUnavailableError();
 }

@@ -11,7 +11,8 @@ export async function GET() {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   }
 
-  const fx = await resolveHolisticUsdPenRate();
+  const fx = await resolveHolisticUsdPenRate().catch(() => null);
+  if (!fx) return NextResponse.json({ error: "Tipo de cambio SBS temporalmente no disponible." }, { status: 503 });
 
   return NextResponse.json({
     ok: true,

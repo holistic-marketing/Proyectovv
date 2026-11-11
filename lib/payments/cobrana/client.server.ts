@@ -47,6 +47,13 @@ type CobranaErrorBody = {
   };
 };
 
+export class CobranaApiError extends Error {
+  constructor(public readonly httpStatus: number, public readonly requestId: string | null) {
+    super("Yape / Plin no pudo generar el código de pago. Estamos verificando la solicitud; no vuelvas a pagar sin un código confirmado.");
+    this.name = "CobranaApiError";
+  }
+}
+
 function apiBase(): string {
   return serverEnv.cobranaApiBaseUrl.replace(/\/$/, "");
 }
@@ -79,10 +86,9 @@ async function cobranaFetch<T>(
   const raw = (await res.json().catch(() => null)) as T | CobranaErrorBody | null;
   if (!res.ok) {
     const err = (raw as CobranaErrorBody | null)?.error;
-    const message =
-      err?.message ||
-      `Yape HTTP ${res.status}${err?.code ? ` (${err.code})` : ""}`;
-    throw new Error(message);
+    const requestId = res.headers.get("x-request-id");
+    console.error("[cobrana] api_error", { path, status: res.status, code: err?.code, requestId });
+    throw new CobranaApiError(res.status, requestId);
   }
   return raw as T;
 }
