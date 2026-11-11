@@ -68,6 +68,57 @@ function MetaChip({
   );
 }
 
+/** ID de cuenta abreviado; un clic copia el ID completo para pegarlo. */
+function CopyIdChip({ id }: { id: string | null | undefined }) {
+  const t = useTranslations("adAccounts");
+  const [copied, setCopied] = useState(false);
+  if (!id) return <MetaChip tone="mono">—</MetaChip>;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(id!);
+    } catch {
+      // Navegadores sin Clipboard API (http, permisos): selección manual.
+      const area = document.createElement("textarea");
+      area.value = id!;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={`${t("table.copyId")}: ${id}`}
+      aria-label={`${t("table.copyId")} ${id}`}
+      className={`inline-flex max-w-full items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors md:text-[10px] ${
+        copied
+          ? "bg-[#ecf7f0] text-[#1f5c40]"
+          : "bg-[#f3eee8] text-[#6b645c] hover:bg-[#e9e2d9] hover:text-[#1a1612]"
+      }`}
+    >
+      <span className="break-all">{copied ? t("table.idCopied") : shortId(id)}</span>
+      <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
+        {copied ? (
+          <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <>
+            <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+            <path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" />
+          </>
+        )}
+      </svg>
+    </button>
+  );
+}
+
 function PlatformMark({ platform }: { platform: AdAccount["platform"] }) {
   if (platform === "tiktok") {
     return (
@@ -407,7 +458,7 @@ export function AdAccountsTable({
                   <StatusPill status={account.status} />
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <MetaChip tone="mono">{shortId(display.accountId)}</MetaChip>
+                  <CopyIdChip id={display.accountId} />
                   {display.bm ? <MetaChip>{display.bm}</MetaChip> : null}
                   {display.fee ? (
                     <MetaChip tone="fee">
@@ -496,11 +547,9 @@ export function AdAccountsTable({
                       <TableCell className="max-w-[280px]">
                         <AccountCell account={account} />
                       </TableCell>
-                      <TableCell title={display.accountId ?? undefined}>
+                      <TableCell>
                         <div className="flex flex-wrap gap-1.5">
-                          <MetaChip tone="mono">
-                            {shortId(display.accountId)}
-                          </MetaChip>
+                          <CopyIdChip id={display.accountId} />
                           {display.bm ? <MetaChip>{display.bm}</MetaChip> : null}
                         </div>
                       </TableCell>

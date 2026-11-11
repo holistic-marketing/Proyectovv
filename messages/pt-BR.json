@@ -1178,7 +1178,9 @@
       "rechargeOff": "Desativada",
       "noFilterMatch": "Nenhuma conta corresponde ao filtro",
       "noFilterHint": "Tente outro status ou limpe a busca.",
-      "colId": "ID"
+      "colId": "ID",
+      "copyId": "Copiar ID",
+      "idCopied": "ID copiado"
     },
     "createModal": {
       "title": "Criar conta publicitária",
