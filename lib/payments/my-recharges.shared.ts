@@ -97,7 +97,10 @@ export function toRechargeRow(intent: IntentLike): RechargeRow {
     creditUsdCents: num(m.credit_amount_cents),
     yapeCode: typeof m.cobrana_code === "string" && m.cobrana_code.trim() ? m.cobrana_code.trim() : null,
     checkoutUrl: typeof intent.checkout_url === "string" && /^https:\/\//.test(intent.checkout_url) ? intent.checkout_url : null,
-    note: intent.status === "failed" && intent.failure_reason ? String(intent.failure_reason).slice(0, 200) : null,
+    note: intent.status === "failed" && intent.failure_reason ? String(intent.failure_reason).slice(0, 200)
+      : intent.provider === "cobrana" && rechargeState(intent) === "processing" && !m.cobrana_code
+        ? "No se obtuvo un código de pago confirmado. La solicitud está pendiente de verificación; no debes pagar este intento."
+        : null,
     cryptoMissingUsdt: cryptoMissingUsdt(intent),
   };
 }

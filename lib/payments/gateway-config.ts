@@ -17,6 +17,8 @@ export const PAYMENT_GATEWAYS: PaymentGateway[] = [
     id: "cobrana",
     name: "Yape / Plin",
     description: "Paga con Yape, Plin o transferencia bancaria",
+    // Emergency closure stays in production; only the explicitly enabled preview can test it.
+    maintenance: !(process.env.VERCEL_ENV === "preview" && process.env.COBRANA_PREVIEW_ENABLED === "true"),
   },
   {
     id: "manual",
