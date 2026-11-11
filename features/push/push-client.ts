@@ -44,9 +44,32 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
+/**
+ * Registra el worker y espera a que quede ACTIVO: suscribirse antes de eso
+ * falla ("no active Service Worker"), justo en el primer toque de "Activar".
+ */
 async function registration(): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration("/");
-  return existing ?? navigator.serviceWorker.register("/sw.js");
+  if (!existing) await navigator.serviceWorker.register("/sw.js");
+  return navigator.serviceWorker.ready;
+}
+
+/** Suscripción del dispositivo; si quedó una con otra llave, la renueva. */
+async function ensureSubscription(reg: ServiceWorkerRegistration): Promise<PushSubscription> {
+  const options = {
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(clientEnv.vapidPublicKey) as BufferSource,
+  };
+  const current = await reg.pushManager.getSubscription();
+  if (current) return current;
+  try {
+    return await reg.pushManager.subscribe(options);
+  } catch (error) {
+    const stale = await reg.pushManager.getSubscription();
+    if (!stale) throw error;
+    await stale.unsubscribe().catch(() => false);
+    return reg.pushManager.subscribe(options);
+  }
 }
 
 async function saveSubscription(subscription: PushSubscription): Promise<void> {
@@ -81,13 +104,7 @@ export async function enablePush(): Promise<PushState> {
   if (permission === "denied") return "denied";
   if (permission !== "granted") return "off";
   const reg = await registration();
-  const subscription =
-    (await reg.pushManager.getSubscription()) ??
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(clientEnv.vapidPublicKey) as BufferSource,
-    }));
-  await saveSubscription(subscription);
+  await saveSubscription(await ensureSubscription(reg));
   return "on";
 }
 
@@ -117,13 +134,7 @@ export async function resyncPushIfGranted(): Promise<void> {
   if (isIos() && !isStandalone()) return;
   try {
     const reg = await registration();
-    const subscription =
-      (await reg.pushManager.getSubscription()) ??
-      (await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(clientEnv.vapidPublicKey) as BufferSource,
-      }));
-    await saveSubscription(subscription);
+    await saveSubscription(await ensureSubscription(reg));
   } catch (error) {
     console.error("[push] no se pudo renovar el dispositivo", error);
   }
