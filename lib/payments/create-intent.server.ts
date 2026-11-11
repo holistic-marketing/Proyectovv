@@ -41,6 +41,7 @@ import { isPaymentGatewayId, isVoucherPaymentProvider } from "@/types/payment";
 import { ensureHecomWalletCobroSynced } from "@/lib/hecom/ensure-wallet-cobro.server";
 import { ensureDebtPaymentCobroSynced } from "@/lib/hecom/ensure-debt-payment-cobro.server";
 import { cancelStaleCobranaCharges } from "@/lib/payments/cobrana/cancel-stale.server";
+import { findReusableCobranaIntent } from "@/lib/payments/cobrana/reuse-pending.server";
 
 export interface CreatePaymentIntentRequest {
   /** Monto que el cliente quiere acreditar en cartera (neto USD). Se cobra bruto + fee. */
@@ -315,6 +316,44 @@ export async function createPaymentIntentForSession(
     const creditUsd = creditCents / 100;
     if (isBelowCryptoMinimum(chargeUsd) || isBelowCryptoMinimum(creditUsd)) {
       throw new CryptoAmountTooSmallError(Math.min(chargeUsd, creditUsd));
+    }
+  }
+
+  // Mismo monto que un recibo Yape que sigue pendiente: se devuelve ese mismo.
+  // Cancelarlo para crear otro igual puede "pisar" a quien ya lo está pagando
+  // desde su banco (el dinero sale y Cobrana no lo asocia a nada).
+  if (isCobrana && !settlesDebt && cobranaCustomer) {
+    const reusable = await findReusableCobranaIntent({
+      organizationId,
+      hecomClienteId: fee.hecomClienteId ?? null,
+      documentNumber: cobranaCustomer.documentNumber,
+      amountCents,
+      currency: intentCurrency,
+      creditCents: fee.creditCents,
+    }).catch(() => null);
+    if (reusable) {
+      const meta = reusable.metadata;
+      console.info("[create-intent] cobrana_reused_pending", { paymentIntentId: reusable.id });
+      return {
+        paymentIntentId: reusable.id,
+        status: reusable.status === "created" ? "created" : "requires_payment",
+        provider,
+        checkoutUrl: reusable.checkoutUrl,
+        providerConfigured: configured,
+        message: "Ya tenías un recibo pendiente por este monto: es el mismo, págalo con Yape o tu banco.",
+        feePercent: fee.feePercent,
+        feeCents: fee.feeCents,
+        creditCents: fee.creditCents,
+        grossCents: fee.grossCents,
+        chargeCurrency,
+        grossChargeCents: reusable.amountCents,
+        grossPenCents: reusable.amountCents,
+        fxRateUsdPen: typeof meta.fx_rate_usd_pen === "number" ? meta.fx_rate_usd_pen : undefined,
+        cobranaCode: typeof meta.cobrana_code === "string" ? meta.cobrana_code : null,
+        cobranaDeeplinks: Array.isArray(meta.cobrana_deeplinks)
+          ? (meta.cobrana_deeplinks as Array<{ key: string; label: string; url: string }>)
+          : undefined,
+      };
     }
   }
 
