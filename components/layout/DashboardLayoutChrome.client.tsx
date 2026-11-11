@@ -11,6 +11,7 @@ import type { SidebarSelectedCliente } from "./SidebarWalletCard.client";
 import type { DashboardPersona } from "@/types/dashboard-persona";
 import { ActingAsClienteBanner } from "./ActingAsClienteBanner.client";
 import { HomeScreenAppBanner } from "@/features/push/HomeScreenAppBanner.client";
+import { InAppPushToasts } from "@/features/push/InAppPushToasts.client";
 import type { TesterDashboardMode } from "@/lib/auth/tester-dashboard-mode";
 import { routes } from "@/config/routes";
 
@@ -136,6 +137,7 @@ export function DashboardLayoutChrome({
 
       <FloatingSupportStack persona={persona} />
       <HomeScreenAppBanner />
+      <InAppPushToasts />
     </>
   );
 }

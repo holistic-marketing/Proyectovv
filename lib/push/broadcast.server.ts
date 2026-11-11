@@ -17,12 +17,12 @@ export const BROADCAST_BODY_MAX = 180;
 
 /** Destinos permitidos al tocar el aviso (rutas internas conocidas). */
 export const BROADCAST_DESTINATIONS = [
-  { url: "/overview", label: "Inicio" },
-  { url: "/payments", label: "Recargar saldo" },
-  { url: "/ad-accounts", label: "Cuentas publicitarias" },
-  { url: "/creative-analyzer", label: "Creativos" },
-  { url: "/education", label: "Educación" },
-  { url: "/support", label: "Soporte" },
+  { url: "/overview", label: "Inicio", action: "Abrir Ads Holistic" },
+  { url: "/payments", label: "Recargar saldo", action: "Recargar ahora" },
+  { url: "/ad-accounts", label: "Cuentas publicitarias", action: "Ver mis cuentas" },
+  { url: "/creative-analyzer", label: "Creativos", action: "Ver creativos" },
+  { url: "/education", label: "Educación", action: "Ver tutorial" },
+  { url: "/support", label: "Soporte", action: "Abrir soporte" },
 ] as const;
 
 const ALLOWED_URLS = new Set<string>(BROADCAST_DESTINATIONS.map((d) => d.url));
@@ -141,6 +141,7 @@ export async function sendBroadcast(
       body: input.body,
       url: input.url,
       tag: `broadcast-${Date.now()}`,
+      actionLabel: BROADCAST_DESTINATIONS.find((d) => d.url === input.url)?.action ?? null,
     },
   );
 

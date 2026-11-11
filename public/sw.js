@@ -7,26 +7,6 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("push", (event) => {
-  let payload = { title: "Ads Holistic", body: "", url: "/overview", tag: "" };
-  try {
-    if (event.data) payload = { ...payload, ...event.data.json() };
-  } catch {
-    payload.body = event.data ? event.data.text() : "";
-  }
-
-  const options = {
-    body: payload.body || "",
-    icon: "/icon-192.png",
-    badge: "/push-badge.png",
-    data: { url: payload.url || "/overview" },
-    timestamp: Date.now(),
-  };
-  if (payload.tag) options.tag = payload.tag;
-
-  event.waitUntil(self.registration.showNotification(payload.title || "Ads Holistic", options));
-});
-
 function sameOriginPath(raw) {
   try {
     const url = new URL(raw || "/overview", self.location.origin);
@@ -35,6 +15,51 @@ function sameOriginPath(raw) {
     return new URL("/overview", self.location.origin).href;
   }
 }
+
+self.addEventListener("push", (event) => {
+  let payload = { title: "Ads Holistic", body: "", url: "/overview", tag: "", actionLabel: "", image: "" };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    payload.body = event.data ? event.data.text() : "";
+  }
+
+  const url = payload.url || "/overview";
+  const options = {
+    body: payload.body || "",
+    icon: "/icon-192.png",
+    badge: "/push-badge.png",
+    data: { url },
+    timestamp: Date.now(),
+    // Se queda en pantalla hasta que la toquen (Windows/Android la esconden a los segundos si no).
+    requireInteraction: payload.sticky !== false,
+    silent: false,
+    vibrate: [120, 60, 120],
+  };
+  if (payload.tag) {
+    options.tag = payload.tag;
+    options.renotify = true;
+  }
+  if (payload.image) options.image = payload.image;
+  if (payload.actionLabel) options.actions = [{ action: "open", title: payload.actionLabel }];
+
+  // Si la app está abierta, también se muestra adentro: eso lo ve aunque el
+  // sistema tenga los avisos de Chrome apagados o en "No molestar".
+  const tellOpenTabs = self.clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((windows) =>
+      windows.forEach((client) =>
+        client.postMessage({
+          type: "holistic-push",
+          payload: { title: payload.title || "Ads Holistic", body: payload.body || "", url, actionLabel: payload.actionLabel || "" },
+        }),
+      ),
+    );
+
+  event.waitUntil(
+    Promise.all([self.registration.showNotification(payload.title || "Ads Holistic", options), tellOpenTabs]),
+  );
+});
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

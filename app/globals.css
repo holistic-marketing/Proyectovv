@@ -1205,3 +1205,13 @@ html[data-theme-direction="light"]::view-transition-new(root) {
 @media (prefers-reduced-motion: reduce) {
   .push-invite { animation: none; }
 }
+
+/* Barra que se vacía mientras el aviso dentro de la app sigue visible. */
+@keyframes push-toast-timer {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+.push-toast-timer { animation-name: push-toast-timer; animation-timing-function: linear; animation-fill-mode: forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .push-toast-timer { animation: none; }
+}

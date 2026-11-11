@@ -16,6 +16,8 @@ export type PushPayload = {
   url?: string | null;
   /** Mismo tag = el aviso nuevo reemplaza al anterior en vez de apilarse. */
   tag?: string | null;
+  /** Botón dentro del aviso (Windows/Android), ej. "Recargar ahora". */
+  actionLabel?: string | null;
 };
 
 export type PushDeliveryStats = { devices: number; delivered: number; failed: number };
@@ -60,6 +62,7 @@ async function deliver(userIds: string[], payload: PushPayload): Promise<PushDel
     body: payload.body ?? "",
     url: payload.url || "/overview",
     tag: payload.tag || undefined,
+    actionLabel: payload.actionLabel || undefined,
   });
 
   const dead: string[] = [];
@@ -153,5 +156,6 @@ export async function maybePushForNotification(input: {
     title: input.title,
     body: input.body,
     url,
+    actionLabel: input.type === "payment_approved" ? "Ver mi saldo" : "Ver detalle",
   });
 }

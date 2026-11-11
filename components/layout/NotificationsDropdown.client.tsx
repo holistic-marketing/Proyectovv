@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
+import { NOTIFICATIONS_REFRESH_EVENT } from "@/features/push/InAppPushToasts.client";
 import { PushDeviceToggle } from "@/features/push/PushDeviceToggle.client";
 import { apiClient } from "@/lib/api/api-client.client";
 import { useAppFormatter } from "@/lib/i18n/use-app-formatter";
@@ -77,13 +78,19 @@ export function NotificationsDropdown() {
   // Carga al entrar para que el punto rojo avise sin tener que abrir la campanita.
   useEffect(() => {
     let cancelled = false;
-    apiClient<NotificationsResponse>(routes.api.notifications)
-      .then((data) => {
-        if (!cancelled) setNotifications(data.notifications ?? []);
-      })
-      .catch(() => undefined);
+    const refresh = () => {
+      apiClient<NotificationsResponse>(routes.api.notifications)
+        .then((data) => {
+          if (!cancelled) setNotifications(data.notifications ?? []);
+        })
+        .catch(() => undefined);
+    };
+    refresh();
+    // Un push que llega con la app abierta también actualiza la campanita.
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, refresh);
     return () => {
       cancelled = true;
+      window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, refresh);
     };
   }, []);
 
