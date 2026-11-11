@@ -16,6 +16,8 @@ type Created = {
   budgetZero: boolean | null;
   access: Array<{ userId: string; ok: boolean; message: string }>;
   renameRequested?: boolean | null;
+  renameManual?: boolean;
+  renameMessage?: string;
 };
 
 const BMS: Array<{ id: string; label: string; hint: string }> = [

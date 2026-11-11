@@ -43,6 +43,10 @@ export type StaffCreatedAccount = {
   access: Array<{ userId: string; ok: boolean; message: string }>;
   /** Se pidió a TikTok el nombre del cliente (null = no aplica: la cuenta nació con ese nombre). */
   renameRequested?: boolean | null;
+  /** TikTok no deja renombrar esta cuenta por API (BM10, BC directo): hay que hacerlo a mano. */
+  renameManual?: boolean;
+  /** Respuesta de TikTok al pedir el nombre (para mostrar el motivo real). */
+  renameMessage?: string;
 };
 
 function norm(s: string): string {
@@ -126,7 +130,11 @@ export function nextSerialOffset(
  * responde code 0 al instante y tarda minutos en verse; en cuentas recién creadas
  * a veces no se aplica. Por eso se verifica después con `readTikTokAdvertiserNames`.
  */
-export async function renameTikTokAdvertiser(advertiserId: string, name: string, token: string): Promise<{ ok: boolean; message: string }> {
+export async function renameTikTokAdvertiser(
+  advertiserId: string,
+  name: string,
+  token: string,
+): Promise<{ ok: boolean; message: string; manual: boolean }> {
   try {
     const res = await fetch(`${API}/advertiser/update/`, {
       method: "POST",
@@ -135,9 +143,13 @@ export async function renameTikTokAdvertiser(advertiserId: string, name: string,
       cache: "no-store",
     });
     const j = (await res.json()) as { code?: number; message?: string };
-    return { ok: j.code === 0, message: j.code === 0 ? "OK" : String(j.message ?? "TikTok rechazó el nombre.") };
+    if (j.code === 0) return { ok: true, message: "OK", manual: false };
+    const message = String(j.message ?? "TikTok rechazó el nombre.");
+    // Cuentas de un BC directo (BM10): TikTok responde 40002 "Invalid advertiser account type"
+    // a cualquier variante del pedido. No es temporal: solo se cambia a mano en TikTok.
+    return { ok: false, message, manual: j.code === 40002 || /account type/i.test(message) };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Sin respuesta de TikTok." };
+    return { ok: false, message: error instanceof Error ? error.message : "Sin respuesta de TikTok.", manual: false };
   }
 }
 
@@ -312,7 +324,13 @@ export async function staffGiveFreeTikTokAccounts(input: {
       })));
     }
     // El panel muestra el nombre vivo de TikTok: sin esto el cliente vería "Libre …".
-    row.renameRequested = acc.name === advertiserName ? null : (await renameTikTokAdvertiser(acc.advertiserId, advertiserName, token)).ok;
+    if (acc.name === advertiserName) row.renameRequested = null;
+    else {
+      const rename = await renameTikTokAdvertiser(acc.advertiserId, advertiserName, token);
+      row.renameRequested = rename.ok;
+      row.renameManual = rename.manual;
+      row.renameMessage = rename.message;
+    }
     given.push(row);
   }
 
@@ -422,4 +440,48 @@ export async function staffCreateTikTokAccounts(input: {
     }
   }
   return { created, error: null };
+}
+
+function sameAdvertiserName(a: string, b: string): boolean {
+  const clean = (x: string) => x.replace(/\s*-\s*agencia\s*$/i, "").replace(/\s+/g, " ").trim().toLowerCase();
+  return clean(a) === clean(b);
+}
+
+export type PendingTikTokName = {
+  advertiserId: string;
+  bmBucket: string;
+  expected: string;
+  live: string | null;
+  clienteId: string;
+};
+
+/**
+ * Cuentas del BM10 entregadas a clientes que en TikTok siguen con nombre de reserva ("… libre …").
+ * En BM10 TikTok no deja renombrar por API, así que gerencia lo cambia a mano; esta lista
+ * se vacía sola cuando el nombre vivo ya coincide.
+ */
+export async function listPendingTikTokNames(token: string): Promise<PendingTikTokName[]> {
+  const { data, error } = await createHecomAdminClient()
+    .from("cliente_tiktok_cuentas")
+    .select("client_id,advertiser_id,advertiser_name,bm_bucket")
+    .eq("bm_bucket", "10")
+    .not("advertiser_name", "is", null)
+    .limit(500);
+  if (error) throw new Error("No se pudo leer las cuentas en Hecom.");
+  const rows = (data ?? []) as Array<{ client_id: string; advertiser_id: string; advertiser_name: string; bm_bucket: string }>;
+  const out: PendingTikTokName[] = [];
+  for (let i = 0; i < rows.length; i += 50) {
+    const chunk = rows.slice(i, i + 50);
+    const live = await readTikTokAdvertiserNames(chunk.map((r) => String(r.advertiser_id)), token);
+    for (const r of chunk) {
+      const id = String(r.advertiser_id);
+      if (!(id in live)) continue; // sin acceso o ID inválido: no se puede comparar
+      const now = live[id] ?? null;
+      // Solo las que siguen con nombre de reserva (FREE_NAME): las demás ya se renombraron
+      // (aunque sea con otro formato) y no se tocan. " - Agencia" no cuenta como diferencia.
+      if (now === null || !FREE_NAME.test(now) || sameAdvertiserName(now, r.advertiser_name)) continue;
+      out.push({ advertiserId: id, bmBucket: r.bm_bucket, expected: r.advertiser_name.trim(), live: now, clienteId: r.client_id });
+    }
+  }
+  return out;
 }

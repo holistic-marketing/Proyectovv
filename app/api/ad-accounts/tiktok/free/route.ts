@@ -15,6 +15,7 @@ import {
 } from "@/lib/hecom/free-tiktok-accounts.server";
 import {
   detectClienteTikTokUsers,
+  listPendingTikTokNames,
   readTikTokAdvertiserNames,
   renameTikTokAdvertiser,
   STAFF_CREATE_MAX_PER_REQUEST,
@@ -50,6 +51,7 @@ function fail(error: unknown, status = 400) {
  * GET ?clienteId=… → usuarios de TikTok del cliente, para darles acceso al asignar.
  * GET ?summary=1 → por BM: libres, total de cuentas, cuántas crear hoy y si llegó al tope.
  * GET ?names=id1,id2 → nombre vivo en TikTok de cada cuenta (para ver si el renombre ya se aplicó).
+ * GET ?pendingNames=1 → cuentas BM10 de clientes cuyo nombre en TikTok aún no es el de Hecom.
  */
 export async function GET(request: Request) {
   const auth = await requireStaff();
@@ -59,6 +61,10 @@ export async function GET(request: Request) {
     const clienteId = url.searchParams.get("clienteId");
     if (clienteId) return NextResponse.json({ users: await detectClienteTikTokUsers(clienteId) });
     if (url.searchParams.get("summary")) return NextResponse.json({ summary: await summarizeFreeByBm() });
+    if (url.searchParams.get("pendingNames")) {
+      const { token } = await resolveTikTokFinanceAccessToken();
+      return NextResponse.json({ pending: await listPendingTikTokNames(token) });
+    }
     const names = url.searchParams.get("names");
     if (names) {
       const { token } = await resolveTikTokFinanceAccessToken();

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { routes } from "@/config/routes";
+import { PendingTikTokNames } from "./PendingTikTokNames.client";
 import { TikTokRenameStatus } from "./TikTokRenameStatus.client";
 
 type Member = { userId: string; userName: string };
@@ -26,6 +27,8 @@ type GivenToCliente = {
   budgetZero: boolean | null;
   access: Array<{ userId: string; ok: boolean; message: string }>;
   renameRequested?: boolean | null;
+  renameManual?: boolean;
+  renameMessage?: string;
 };
 
 const BMS: Array<{ id: string; label: string; hint: string }> = [
@@ -187,6 +190,7 @@ export function FreeTikTokAccountsManager() {
           onReload={() => reload(bm)}
         />
       </div>
+      {bm === "10" ? <PendingTikTokNames /> : null}
     </div>
   );
 }

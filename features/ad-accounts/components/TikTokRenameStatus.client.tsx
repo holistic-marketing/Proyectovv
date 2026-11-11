@@ -2,9 +2,17 @@
 
 import { useState } from "react";
 import { routes } from "@/config/routes";
+import { CopyNameButton, tiktokAccountUrl } from "./PendingTikTokNames.client";
 
-type Row = { advertiserId: string; advertiserName: string; renameRequested?: boolean | null };
-type State = "pending" | "applied" | "notyet" | "failed" | "busy";
+type Row = {
+  advertiserId: string;
+  advertiserName: string;
+  renameRequested?: boolean | null;
+  /** TikTok no deja renombrar esta cuenta por API (BM10): se hace a mano. */
+  renameManual?: boolean;
+  renameMessage?: string;
+};
+type State = "pending" | "applied" | "notyet" | "failed" | "busy" | "manual";
 
 /**
  * Estado del nombre en TikTok tras entregar cuentas libres a un cliente.
@@ -14,7 +22,7 @@ type State = "pending" | "applied" | "notyet" | "failed" | "busy";
 export function TikTokRenameStatus({ accounts }: { accounts: Row[] }) {
   const rows = accounts.filter((a) => a.renameRequested !== null && a.renameRequested !== undefined);
   const [state, setState] = useState<Record<string, State>>(() =>
-    Object.fromEntries(rows.map((a) => [a.advertiserId, a.renameRequested ? "pending" : "failed"])),
+    Object.fromEntries(rows.map((a) => [a.advertiserId, a.renameManual ? "manual" : a.renameRequested ? "pending" : "failed"])),
   );
   const [live, setLive] = useState<Record<string, string | null>>({});
   const [checking, setChecking] = useState(false);
@@ -38,7 +46,7 @@ export function TikTokRenameStatus({ accounts }: { accounts: Row[] }) {
         for (const r of rows) {
           const name = j.names![r.advertiserId];
           if (name === r.advertiserName) next[r.advertiserId] = "applied";
-          else if (next[r.advertiserId] !== "failed") next[r.advertiserId] = "notyet";
+          else if (next[r.advertiserId] !== "failed" && next[r.advertiserId] !== "manual") next[r.advertiserId] = "notyet";
         }
         return next;
       });
@@ -58,21 +66,27 @@ export function TikTokRenameStatus({ accounts }: { accounts: Row[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "rename", advertiserId: r.advertiserId, name: r.advertiserName }),
       });
-      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; error?: string };
-      setState((prev) => ({ ...prev, [r.advertiserId]: j.ok ? "pending" : "failed" }));
-      if (!j.ok) setNote(j.message || j.error || "TikTok rechazó el nombre.");
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; manual?: boolean; message?: string; error?: string };
+      setState((prev) => ({ ...prev, [r.advertiserId]: j.ok ? "pending" : j.manual ? "manual" : "failed" }));
+      if (!j.ok && !j.manual) setNote(j.message || j.error || "TikTok rechazó el nombre.");
     } catch {
       setState((prev) => ({ ...prev, [r.advertiserId]: "failed" }));
     }
   }
 
   const allApplied = rows.every((r) => state[r.advertiserId] === "applied");
+  const anyAuto = rows.some((r) => state[r.advertiserId] !== "manual");
+  const anyManual = rows.some((r) => state[r.advertiserId] === "manual");
 
   return (
     <div className="space-y-2 rounded-xl bg-[#fff8eb] px-3 py-2.5 text-[12px] leading-5 text-[#7a4b12] ring-1 ring-[#f5dfb8]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold">
-          {allApplied ? "Nombres actualizados en TikTok ✓" : "Nombre en TikTok: ya se pidió el cambio, tarda unos minutos en verse."}
+          {allApplied
+            ? "Nombres actualizados en TikTok ✓"
+            : anyAuto
+              ? "Nombre en TikTok: ya se pidió el cambio, tarda unos minutos en verse."
+              : "Nombre en TikTok: hay que cambiarlo a mano."}
         </p>
         {allApplied ? null : (
           <button
@@ -96,12 +110,28 @@ export function TikTokRenameStatus({ accounts }: { accounts: Row[] }) {
                   ? "✓ ya se llama así"
                   : s === "busy"
                     ? "Pidiendo…"
-                    : s === "failed"
-                      ? "✗ TikTok no lo aceptó"
+                    : s === "manual"
+                      ? `Cámbialo a mano a "${r.advertiserName}"`
+                      : s === "failed"
+                        ? `✗ TikTok no lo aceptó${r.renameMessage ? ` (${r.renameMessage})` : ""}`
                       : s === "notyet"
                         ? `Aún se llama "${live[r.advertiserId] ?? "?"}"`
                         : "Pedido"}
               </span>
+              {s === "manual" ? (
+                <>
+                  <CopyNameButton text={r.advertiserName} />
+                  <a
+                    href={tiktokAccountUrl(r.advertiserId)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-[#c2410c] hover:bg-[#fff4ec]"
+                  >
+                    Abrir en TikTok ↗
+                  </a>
+                </>
+              ) : null}
+              {s === "notyet" || s === "failed" ? <CopyNameButton text={r.advertiserName} /> : null}
               {s === "notyet" || s === "failed" ? (
                 <button
                   type="button"
@@ -116,9 +146,15 @@ export function TikTokRenameStatus({ accounts }: { accounts: Row[] }) {
         })}
       </ul>
       {note ? <p className="text-amber-900">{note}</p> : null}
-      {allApplied ? null : (
+      {anyManual ? (
         <p className="text-[11px] text-[#8a6a3c]">
-          En cuentas recién creadas TikTok a veces no lo aplica. Si tras reintentar sigue igual, cámbialo en el BC con el botón Copiar.
+          Las cuentas del BM 10 son de un Business Center directo y TikTok no deja cambiarles el nombre por API. Copia el nombre, abre la
+          cuenta y pégalo en Información de la cuenta. Queda en «Nombres pendientes» (Cuentas libres → BM 10) hasta que coincida.
+        </p>
+      ) : null}
+      {allApplied || !anyAuto ? null : (
+        <p className="text-[11px] text-[#8a6a3c]">
+          En cuentas recién creadas TikTok a veces no lo aplica. Si tras reintentar sigue igual, usa «Copiar nombre» y cámbialo en TikTok.
         </p>
       )}
     </div>
