@@ -46,6 +46,8 @@ export interface SessionUser {
   organizationName: string;
   emailConfirmed: boolean;
   profileStatus: ProfileStatus;
+  /** Gerente/staff de Ads Holistic (staff_members, o modo del tester). */
+  isStaff: boolean;
 }
 
 export interface ProfileRow {
