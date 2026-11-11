@@ -7,6 +7,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { centsToAmount, mapWalletTransactionRow } from "@/lib/services/mappers";
 import { getString, isRecord } from "@/lib/records";
+import { RECHARGE_BOT_SOURCE } from "@/lib/payments/yape/recipient";
 import { listFinancialActivity } from "@/lib/ledger/ledger.server";
 import type { SessionUser } from "@/types/auth";
 import type {
@@ -853,7 +854,9 @@ function isClientManualVoucherIntent(row: DbPaymentIntentRow): boolean {
     source != null &&
     source !== "dashboard" &&
     source !== "manual" &&
-    source !== "manual_voucher"
+    source !== "manual_voucher" &&
+    // El bot de Yape del chat deriva aquí las capturas que no pudo validar solo.
+    source !== RECHARGE_BOT_SOURCE
   ) {
     return false;
   }
@@ -1078,6 +1081,9 @@ export async function listManualVoucherReviewsForStaff(options?: {
       "requires_payment",
       "created",
     ])
+    // Solo candidatas a revisión. Antes se traían las 200 más recientes de
+    // cualquier estado y las recargas abandonadas dejaban fuera boletas viejas.
+    .or("status.eq.processing,metadata->>manual_review_status.eq.pending_review")
     .order("created_at", { ascending: false })
     .limit(hecomClienteId ? 80 : 200);
 
