@@ -3,6 +3,7 @@ import { sendTransactionalEmail } from "@/lib/email/email.server";
 import {
   manualPaymentApprovedClientTemplate,
   manualPaymentPendingManagerTemplate,
+  manualVoucherOutcomeClientTemplate,
   type ManualPaymentPendingKind,
 } from "@/lib/email/templates/payments";
 import { serverEnv } from "@/lib/env/env.server";
@@ -545,5 +546,61 @@ export async function notifyClientManualPaymentApprovedBestEffort(input: {
     });
   } catch (error) {
     console.error("[email] manual approved client notify failed", error);
+  }
+}
+
+/**
+ * Comprobante no acreditado (en revisión) o rechazado → avisar al cliente
+ * por email con el motivo. `dedupeKey` distingue reintentos del mismo intent
+ * (ej. hash del voucher) para no repetir el mismo aviso.
+ */
+export async function notifyClientManualVoucherOutcomeBestEffort(input: {
+  kind: "review" | "rejected";
+  paymentIntentId: string;
+  organizationId: string;
+  createdBy: string | null;
+  chargeAmountCents: number;
+  chargeCurrency: string;
+  reason: string;
+  dedupeKey?: string | null;
+}): Promise<void> {
+  try {
+    const to = await resolveUserEmail(input.createdBy);
+    if (!to) {
+      console.warn("[email] no client email for voucher outcome", {
+        paymentIntentId: input.paymentIntentId,
+        kind: input.kind,
+      });
+      return;
+    }
+
+    const template = manualVoucherOutcomeClientTemplate({
+      kind: input.kind,
+      appName: serverEnv.appName,
+      chargedLabel: formatMoney(input.chargeAmountCents / 100, input.chargeCurrency),
+      reason: input.reason,
+      dashboardUrl: `${serverEnv.appUrl.replace(/\/$/, "")}/payments`,
+    });
+
+    const suffix = input.dedupeKey ? `:${input.dedupeKey.slice(0, 32)}` : "";
+    await sendTransactionalEmail({
+      to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      templateKey:
+        input.kind === "review"
+          ? "payment.manual.review_client"
+          : "payment.manual.rejected_client",
+      organizationId: input.organizationId,
+      userId: input.createdBy,
+      idempotencyKey: `email:manual_${input.kind}_client:${input.paymentIntentId}${suffix}`,
+      metadata: {
+        payment_intent_id: input.paymentIntentId,
+        reason: input.reason.slice(0, 300),
+      },
+    });
+  } catch (error) {
+    console.error("[email] voucher outcome client notify failed", error);
   }
 }

@@ -279,6 +279,45 @@ export function manualPaymentPendingManagerTemplate(input: {
   return { subject, text: textLines.join("\n"), html };
 }
 
+/**
+ * Cliente: su comprobante no se acreditó automáticamente (queda en revisión)
+ * o un gerente lo rechazó. Siempre explica el motivo y qué hacer.
+ */
+export function manualVoucherOutcomeClientTemplate(input: {
+  kind: "review" | "rejected";
+  appName: string;
+  chargedLabel: string;
+  reason: string;
+  dashboardUrl: string;
+}) {
+  const reason = trimSentence(input.reason) || "Necesitamos revisar tu comprobante";
+  const isReview = input.kind === "review";
+  const title = isReview ? "Comprobante en revisión" : "Comprobante rechazado";
+  const subject = isReview
+    ? `Tu comprobante de ${input.chargedLabel} está en revisión`
+    : `Tu comprobante de ${input.chargedLabel} fue rechazado`;
+  const nextStep = isReview
+    ? "Te avisamos por este medio apenas quede listo. No vuelvas a pagar."
+    : "El saldo no se acreditó. Si crees que es un error, responde este correo o escríbenos por soporte con el comprobante.";
+  const wrapped = wrapHolisticEmail({
+    title,
+    preview: `${reason}.`,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">${
+        isReview
+          ? `Recibimos tu comprobante de <strong style="color:#1c1917">${escapeHtml(input.chargedLabel)}</strong>, pero no pudimos acreditarlo automáticamente.`
+          : `Revisamos tu comprobante de <strong style="color:#1c1917">${escapeHtml(input.chargedLabel)}</strong> y no pudimos aprobarlo.`
+      }</p>
+      <p style="margin:0 0 12px;padding:12px 14px;background:#f6f1e8;border-radius:6px;color:#4a463f;"><strong>Motivo:</strong> ${escapeHtml(reason)}.</p>
+      <p style="margin:0;">${escapeHtml(nextStep)}</p>
+    `,
+    ctaLabel: "Ver mis recargas",
+    ctaUrl: input.dashboardUrl,
+  });
+  const text = `${title}. Comprobante: ${input.chargedLabel}. Motivo: ${reason}. ${nextStep} ${input.dashboardUrl}${wrapped.textFooter}`;
+  return { subject, text, html: wrapped.html };
+}
+
 /** Cliente: gerentes ya aceptaron el pago manual. */
 export function manualPaymentApprovedClientTemplate(input: {
   appName: string;

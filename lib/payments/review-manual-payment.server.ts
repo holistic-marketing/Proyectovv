@@ -959,6 +959,28 @@ export async function rejectManualVoucherPayment(input: {
     },
   });
 
+  // Recargas de cartera: el cliente recibe por correo el motivo del rechazo.
+  if (!isMissingCobroPurpose(intent.metadata) && !isLoPagadoDebtPurpose(intent.metadata)) {
+    const meta = (intent.metadata ?? {}) as Record<string, unknown>;
+    const chargeCurrency = meta.charge_currency === "PEN" ? "PEN" : intent.currency;
+    const grossPenCents = Number(meta.gross_pen_cents);
+    const { notifyClientManualVoucherOutcomeBestEffort } = await import(
+      "@/lib/email/manual-payment-notify.server"
+    );
+    await notifyClientManualVoucherOutcomeBestEffort({
+      kind: "rejected",
+      paymentIntentId: intent.id,
+      organizationId: intent.organization_id,
+      createdBy: intent.created_by,
+      chargeAmountCents:
+        chargeCurrency === "PEN" && Number.isFinite(grossPenCents) && grossPenCents > 0
+          ? grossPenCents
+          : intent.amount_cents,
+      chargeCurrency,
+      reason,
+    });
+  }
+
   await insertAudit({
     organizationId: intent.organization_id,
     actorUserId: input.actor.id,

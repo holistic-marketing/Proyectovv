@@ -234,8 +234,12 @@ export async function processManualVoucherUpload(input: {
   const isDebtPayment = isLoPagadoDebtPurpose(metadata);
   const skipWalletAuto = isMissingCobro || isDebtPayment;
 
+  // Si la IA leyó bien pero la acreditación se niega (Binance, duplicado
+  // simultáneo, etc.), guardamos ese motivo para avisarle al cliente.
+  let completionDeclinedReason: string | null = null;
   if (!skipWalletAuto && analysis.confirmed && metadata.source === MANUAL_DASHBOARD_SOURCE) {
-    await completeManualVoucherConfirmedDeposit({ intentId: intent.id });
+    const outcome = await completeManualVoucherConfirmedDeposit({ intentId: intent.id });
+    if (!outcome.completed) completionDeclinedReason = outcome.reason;
   }
 
   const fresh = await getPaymentIntentByIdInternal(intent.id);
@@ -257,6 +261,9 @@ export async function processManualVoucherUpload(input: {
     };
   }
 
+  const clientReviewReason = analysis.confirmed
+    ? completionDeclinedReason ?? "Comprobante recibido. La acreditación requiere revisión."
+    : analysis.reason || "Un gerente revisará tu comprobante.";
 
   await createNotificationBestEffort({
     organizationId: intent.organizationId,
@@ -273,9 +280,7 @@ export async function processManualVoucherUpload(input: {
           (isDebtPayment
             ? "Tu comprobante fue recibido. Un gerente lo revisará antes de bajar la deuda del mes."
             : "Tu comprobante fue recibido. Un gerente lo revisará antes de registrarlo en Lo pagado.")
-      : analysis.confirmed
-        ? "Comprobante recibido. La acreditación requiere revisión."
-        : analysis.reason || "Un gerente revisará tu comprobante.",
+      : clientReviewReason,
     type: "payment_proof_uploaded",
     data: {
       payment_intent_id: intent.id,
@@ -305,13 +310,31 @@ export async function processManualVoucherUpload(input: {
       purpose:
         typeof metadata.purpose === "string" ? String(metadata.purpose) : null,
     });
+
+    // Recargas de cartera: el cliente recibe por correo el motivo concreto.
+    // Deuda / Lo pagado ya tienen su propio flujo con gerencia.
+    if (!isMissingCobro && !isDebtPayment) {
+      const { notifyClientManualVoucherOutcomeBestEffort } = await import(
+        "@/lib/email/manual-payment-notify.server"
+      );
+      await notifyClientManualVoucherOutcomeBestEffort({
+        kind: "review",
+        paymentIntentId: intent.id,
+        organizationId: intent.organizationId,
+        createdBy: intent.createdBy,
+        chargeAmountCents,
+        chargeCurrency,
+        reason: clientReviewReason,
+        dedupeKey: contentHash,
+      });
+    }
   }
 
   return {
     analysis: {
       ...analysis,
       needsReview: true,
-      reason: analysis.confirmed ? "Comprobante recibido. La acreditación requiere revisión." : analysis.reason,
+      reason: clientReviewReason,
     },
     autoApproved: false,
     status: "processing",

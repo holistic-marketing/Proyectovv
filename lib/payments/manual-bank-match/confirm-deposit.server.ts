@@ -244,5 +244,24 @@ async function completeDeposit(input: {
     data: { payment_intent_id: intent.id, url: "/payments" },
   });
 
+  // Antes el cliente solo recibía "se acredita cuando el equipo apruebe"
+  // y nunca un correo de confirmación cuando la IA acreditaba sola.
+  const chargeCurrency = intent.metadata.charge_currency === "PEN" ? "PEN" : "USD";
+  const grossPenCents = Number(intent.metadata.gross_pen_cents);
+  const { notifyClientManualPaymentApprovedBestEffort } = await import(
+    "@/lib/email/manual-payment-notify.server"
+  );
+  await notifyClientManualPaymentApprovedBestEffort({
+    paymentIntentId: intent.id,
+    organizationId: intent.organizationId,
+    createdBy: intent.createdBy ?? null,
+    chargeAmountCents:
+      chargeCurrency === "PEN" && Number.isFinite(grossPenCents) && grossPenCents > 0
+        ? grossPenCents
+        : intent.amountCents,
+    chargeCurrency,
+    creditUsdCents,
+  });
+
   return { completed: true, journalId };
 }
