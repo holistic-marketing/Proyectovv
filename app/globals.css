@@ -1196,16 +1196,6 @@ html[data-theme-direction="light"]::view-transition-new(root) {
   border-radius: 0;
 }
 
-/* Invitación a activar avisos: entra suave desde arriba. */
-@keyframes push-invite-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-.push-invite { animation: push-invite-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@media (prefers-reduced-motion: reduce) {
-  .push-invite { animation: none; }
-}
-
 /* Barra que se vacía mientras el aviso dentro de la app sigue visible. */
 @keyframes push-toast-timer {
   from { width: 100%; }
@@ -1214,4 +1204,79 @@ html[data-theme-direction="light"]::view-transition-new(root) {
 .push-toast-timer { animation-name: push-toast-timer; animation-timing-function: linear; animation-fill-mode: forwards; }
 @media (prefers-reduced-motion: reduce) {
   .push-toast-timer { animation: none; }
+}
+
+/* Avisos dentro de la app: caen desde arriba girando en 3D, rebotan un poco y se asientan. */
+.push-stage { perspective: 1100px; }
+@keyframes push-drop-in {
+  0% { opacity: 0; transform: translateY(-110%) rotateX(-62deg) scale(0.9); }
+  55% { opacity: 1; transform: translateY(6px) rotateX(9deg) scale(1.01); }
+  78% { transform: translateY(-2px) rotateX(-3deg) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes push-drop-out {
+  to { opacity: 0; transform: translateY(-70%) rotateX(-48deg) scale(0.92); }
+}
+.push-drop { transform-origin: 50% 0; animation: push-drop-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.push-drop[data-leaving="true"] { animation: push-drop-out 240ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+
+/* Se inclina siguiendo el mouse y se puede deslizar hacia arriba con el dedo. */
+.push-tilt {
+  transform: translateY(var(--dy, 0px)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.push-tilt[data-dragging="true"] { transition: none; }
+.push-sheen {
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.65), transparent 62%);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+@media (hover: hover) {
+  .push-tilt:hover .push-sheen { opacity: 1; }
+}
+
+/* El logo entra con un pequeño salto; la campana de la invitación se mece. */
+@keyframes push-icon-pop {
+  0% { opacity: 0; transform: scale(0.4) rotate(-18deg); }
+  60% { opacity: 1; transform: scale(1.12) rotate(6deg); }
+  100% { opacity: 1; transform: none; }
+}
+.push-icon-pop { animation: push-icon-pop 560ms 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes push-bell-ring {
+  0%, 100% { transform: rotate(0); }
+  12% { transform: rotate(16deg); }
+  26% { transform: rotate(-13deg); }
+  40% { transform: rotate(9deg); }
+  54% { transform: rotate(-6deg); }
+  68% { transform: rotate(3deg); }
+  82% { transform: rotate(-1deg); }
+}
+.push-bell-ring { transform-origin: 50% 10%; animation: push-bell-ring 1.2s 520ms ease-in-out both; }
+
+/* Invitación: en el celular sube desde abajo como hoja; en PC baja junto a la campanita. */
+@keyframes push-sheet-up {
+  0% { opacity: 0; transform: translateY(70%) rotateX(36deg) scale(0.94); }
+  60% { opacity: 1; transform: translateY(-5px) rotateX(-4deg) scale(1.005); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes push-fade-out {
+  to { opacity: 0; transform: translateY(14px) scale(0.96); }
+}
+.push-sheet { transform-origin: 50% 100%; animation: push-sheet-up 640ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.push-sheet[data-leaving="true"] { animation: push-fade-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+@media (min-width: 640px) {
+  .push-sheet { transform-origin: 85% 0; animation-name: push-drop-in; }
+  .push-sheet[data-leaving="true"] { animation-name: push-drop-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .push-drop,
+  .push-drop[data-leaving="true"],
+  .push-sheet,
+  .push-sheet[data-leaving="true"],
+  .push-icon-pop,
+  .push-bell-ring { animation-duration: 1ms; animation-delay: 0ms; }
+  .push-tilt { transform: none; transition: none; }
 }
