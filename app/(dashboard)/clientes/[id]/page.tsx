@@ -14,6 +14,9 @@ import { formatDateTime } from "@/lib/format";
 import { dashboardClasses } from "@/lib/ui/dashboard-classes";
 import { SelectHecomClienteOnMount } from "@/features/clientes/components/SelectHecomClienteOnMount.client";
 import { HecomClienteAvatar } from "@/features/clientes/components/HecomClienteAvatar.client";
+import { ClienteFeeCard } from "@/features/clientes/components/ClienteFeeCard.client";
+import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isPaymentsSuperAdminEmail } from "@/lib/payments/funding-roles.server";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +35,8 @@ export default async function ClienteVistaPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireSession();
+  const session = await requireSession();
+  const isStaff = isHecomOtpStaffEmail(session.email) || isPaymentsSuperAdminEmail(session.email);
   const { id } = await params;
   const hecomCfg = getHecomSupabaseConfig();
 
@@ -190,6 +194,8 @@ export default async function ClienteVistaPage({
           </p>
         </div>
       </div>
+
+      {isStaff ? <ClienteFeeCard clienteId={cliente.id} currentFee={cliente.tiktokDefaultFee} /> : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
