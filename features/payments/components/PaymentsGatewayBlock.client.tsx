@@ -90,15 +90,16 @@ export function PaymentsGatewayBlockClient({
         depositFeePercent={depositFeePercent}
       />
 
-      {canClientStripeFund && modalOpen && selectedGateway === "manual" ? (
+      {canClientStripeFund && modalOpen && (selectedGateway === "manual" || selectedGateway === "crypto") ? (
         <ManualPaymentModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           feePercent={depositFeePercent}
+          initialPayMethod={selectedGateway === "crypto" ? "binance" : "bank"}
         />
       ) : null}
 
-      {canClientStripeFund && modalOpen && selectedGateway !== "manual" ? (
+      {canClientStripeFund && modalOpen && selectedGateway !== "manual" && selectedGateway !== "crypto" ? (
         <AddBalanceModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}

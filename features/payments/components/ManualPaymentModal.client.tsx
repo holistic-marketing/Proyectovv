@@ -58,6 +58,7 @@ interface ManualPaymentModalProps {
   open: boolean;
   onClose: () => void;
   feePercent?: number;
+  initialPayMethod?: "bank" | "binance";
   /** Link público de Lo pagado: mismas pantallas, APIs atadas al token. */
   endpoints?: {
     config: string;
@@ -121,6 +122,7 @@ export function ManualPaymentModal({
   open,
   onClose,
   feePercent = 10,
+  initialPayMethod = "bank",
   endpoints,
   paysDebt = false,
   debtMonth,
@@ -148,8 +150,8 @@ export function ManualPaymentModal({
   // Al retomar una recarga se monta con key propia y arranca en «Pago».
   const [step, setStep] = useState<Step>(resume ? "banks" : "form");
   const [amount, setAmount] = useState("");
-  const [payMethod, setPayMethod] = useState<"bank" | "binance">(resume?.manualPayMethod ?? "bank");
-  const [chargeCurrency, setChargeCurrency] = useState<ChargeCurrency>(resume?.chargeCurrency ?? "PEN");
+  const [payMethod, setPayMethod] = useState<"bank" | "binance">(resume?.manualPayMethod ?? initialPayMethod);
+  const [chargeCurrency, setChargeCurrency] = useState<ChargeCurrency>(resume?.chargeCurrency ?? (initialPayMethod === "binance" ? "USD" : "PEN"));
   const [config, setConfig] = useState<ManualConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -403,14 +405,14 @@ export function ManualPaymentModal({
               description={
                 paysDebt
                   ? "Este pago baja lo que debes de este mes. No recarga cartera."
-                  : t("manualModal.amountHint")
+                  : t(payMethod === "binance" ? "manualModal.binanceAmountHint" : "manualModal.amountHint")
               }
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
               identityDescription={
                 paysDebt
                   ? "Pago de deuda · Lo pagado"
-                  : t("manualModal.subtitle")
+                  : t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")
               }
               steps={manualSteps}
               currentStep={modalStepIndex}
@@ -558,10 +560,10 @@ export function ManualPaymentModal({
             <PaymentModalHeader
               titleId="manual-payment-title"
               title={t("manualModal.doTransfer")}
-              description={t("manualModal.transferHint", { amount: chargeLabel })}
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
-              identityDescription={t("manualModal.subtitle")}
+              description={payMethod === "binance" ? t("manualModal.binanceInstructions") : t("manualModal.transferHint", { amount: chargeLabel })}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
+              identityDescription={t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")}
               steps={manualSteps}
               currentStep={modalStepIndex}
               onClose={resetAndClose}
@@ -687,10 +689,10 @@ export function ManualPaymentModal({
             <PaymentModalHeader
               titleId="manual-payment-title"
               title={t("manualModal.uploadTitle")}
-              description={t("manualModal.uploadDesc")}
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
-              identityDescription={t("manualModal.subtitle")}
+              description={t(payMethod === "binance" ? "manualModal.binanceUploadDesc" : "manualModal.uploadDesc")}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
+              identityDescription={t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")}
               steps={manualSteps}
               currentStep={modalStepIndex}
               onClose={resetAndClose}
@@ -798,9 +800,9 @@ export function ManualPaymentModal({
               titleId="manual-payment-title"
               title={t("manualModal.verifying")}
               description={t("manualModal.verifyingDesc")}
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
-              identityDescription={t("manualModal.subtitle")}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
+              identityDescription={t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")}
               steps={manualSteps}
               currentStep={modalStepIndex}
               onClose={resetAndClose}
@@ -824,9 +826,9 @@ export function ManualPaymentModal({
                   ? "Gerencia ya puede revisar el voucher. Al aceptarlo, baja tu deuda. No entra a cartera."
                   : t("manualModal.confirmedDesc")
               }
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
-              identityDescription={t("manualModal.subtitle")}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
+              identityDescription={t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")}
               steps={manualSteps}
               currentStep={modalStepIndex}
               onClose={resetAndClose}
@@ -876,11 +878,11 @@ export function ManualPaymentModal({
               description={
                 paysDebt
                   ? "Gerencia revisa la transferencia y, al aceptarla, baja la deuda de este mes. No acredita cartera."
-                  : t("manualModal.pendingDesc")
+                  : t(payMethod === "binance" ? "manualModal.binanceReview" : "manualModal.pendingDesc")
               }
-              identityIcon={<GatewayLogo gatewayId="manual" size="sm" />}
-              identityLabel={t("manualModal.title")}
-              identityDescription={t("manualModal.subtitle")}
+              identityIcon={<GatewayLogo gatewayId={payMethod === "binance" ? "crypto" : "manual"} size="sm" />}
+              identityLabel={payMethod === "binance" ? "Binance Pay" : t("manualModal.title")}
+              identityDescription={t(payMethod === "binance" ? "manualModal.binanceSubtitle" : "manualModal.subtitle")}
               steps={manualSteps}
               currentStep={modalStepIndex}
               onClose={resetAndClose}

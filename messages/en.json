@@ -263,7 +263,7 @@
       "tabs": {
         "yape": "Yape / Plin",
         "manual": "Automatic bank transfer",
-        "crypto": "Crypto (USDT)",
+        "crypto": "Binance Pay",
         "abroad": "I am in another country"
       },
       "yape": {
@@ -282,24 +282,24 @@
         "tip": "Transferred but did not upload the screenshot? Go to “My top-ups” below and tap “Upload receipt”."
       },
       "crypto": {
-        "step1": "Choose “Crypto (USDT)” and enter how much you want in your wallet (minimum $12).",
-        "step2": "The NOWPayments page opens with a USDT address.",
-        "step3": "Send the USDT on the TRC20 (Tron) network. The exact amount shown by NOWPayments must arrive. If you use another network the payment is lost.",
-        "step4": "When the network confirms, the balance arrives automatically.",
-        "time": "Arrives automatically in a few minutes",
-        "tip": "Binance takes the network fee from what you type. Enter the NOWPayments amount plus the fee, and check that the «receive amount» matches NOWPayments. If less arrives, the top-up is not credited."
+        "step1": "Choose “Binance Pay” and enter the amount you want in your wallet. Your agreed fee applies.",
+        "step2": "Check the USDT total and the Binance Pay email shown on screen.",
+        "step3": "Send the total through Binance Pay to that email and upload the full receipt with its order ID.",
+        "step4": "Management reviews the payment and credits your wallet after approval.",
+        "time": "Credited after management approval",
+        "tip": "Upload the full Binance Pay receipt with recipient, amount, currency and order ID. Management will verify the payment."
       },
       "abroad": {
         "step1": "Yape, Plin and BCP transfers are Peruvian. From Colombia, Ecuador or Brazil the easiest way is to pay with USDT.",
         "step2": "Buy USDT on Binance P2P with your local bank (Nequi, Bancolombia, Banco Pichincha, Pix…) or with your card.",
-        "step3": "Choose “Crypto (USDT)” here and send the USDT on the TRC20 network. The balance arrives automatically.",
-        "time": "Arrives automatically in a few minutes",
-        "tip": "For money sent to our BCP account, choose “Automatic bank transfer”. For USDT sent from Binance or another wallet, choose “Crypto (USDT)”."
+        "step3": "Choose “Binance Pay”, send to the displayed email and upload your receipt for management review.",
+        "time": "Credited after management approval",
+        "tip": "For BCP transfers, use “Automatic transfer”. For USDT, choose “Binance Pay” and send to the displayed email."
       },
       "faq": {
         "notCredited": {
           "q": "I paid and do not see my balance",
-          "a": "For Yape or crypto, the balance is credited when the provider confirms payment. Check My top-ups: upload the receipt if it is missing. In review means automatic validation was not completed. Do not pay again; we will notify you when resolved."
+          "a": "Yape credits after the provider confirms payment. Binance Pay requires a receipt and management approval. Check My top-ups; if it is in review, do not pay again."
         },
         "invalidPayment": {
           "q": "Yape says “Invalid payment”",
@@ -715,7 +715,10 @@
       "cci": "CCI · from another bank",
       "reviewWait": "We are reading the receipt. Our team will complete the review.",
       "binanceInstructions": "Send the indicated USDT amount through Binance Pay to this email. Save your receipt and upload it in the next step.",
-      "binanceReview": "Your receipt will be sent to management for manual review. Your balance is credited after approval."
+      "binanceReview": "Your receipt will be sent to management for manual review. Your balance is credited after approval.",
+      "binanceSubtitle": "USDT by email · management review",
+      "binanceAmountHint": "Enter the balance you want to receive. You will see the USDT total including your agreed fee.",
+      "binanceUploadDesc": "Upload the full Binance Pay receipt with recipient, amount, currency and order ID. Management will verify the payment."
     },
     "reloadSection": {
       "title": "Add balance",
@@ -837,7 +840,7 @@
       "whopDesc": "Card, Apple Pay, and global wallets",
       "cobranaDesc": "Pay with Yape, Plin, or bank transfer",
       "manualName": "Automatic bank transfer",
-      "manualDesc": "Transfer to BCP · automatic validation"
+      "manualDesc": "BCP transfer or Binance Pay · receipt required"
     },
     "clienteScoped": {
       "eyebrow": "Hecom history",

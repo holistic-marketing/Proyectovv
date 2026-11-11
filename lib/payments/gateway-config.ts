@@ -7,7 +7,7 @@ const STRIPE_ACTIVE = STRIPE_PAYMENTS_ENABLED && Boolean(serverEnv.stripeSecretK
 /**
  * Gateways visibles en Pagos.
  * Stripe (solo con STRIPE_PAYMENTS_ENABLED + clave), Yape/Plin, manual y cripto.
- * Whop retirado; NOWPayments visible en mantenimiento.
+ * Whop y NOWPayments retirados. Binance Pay usa el flujo manual con comprobante.
  */
 export const PAYMENT_GATEWAYS: PaymentGateway[] = [
   ...(STRIPE_ACTIVE
@@ -17,8 +17,6 @@ export const PAYMENT_GATEWAYS: PaymentGateway[] = [
     id: "cobrana",
     name: "Yape / Plin",
     description: "Paga con Yape, Plin o transferencia bancaria",
-    // Emergency closure stays in production; only the explicitly enabled preview can test it.
-    maintenance: !(process.env.VERCEL_ENV === "preview" && process.env.COBRANA_PREVIEW_ENABLED === "true"),
   },
   {
     id: "manual",
@@ -27,15 +25,15 @@ export const PAYMENT_GATEWAYS: PaymentGateway[] = [
   },
   {
     id: "crypto",
-    name: "Cripto (USDT)",
-    description: "USDT TRC20 · pago automático con NOWPayments",
-    maintenance: true,
+    name: "Binance Pay",
+    description: "Pago en USDT por correo · sube tu comprobante para revisión",
   },
 ];
 
 export function isGatewayInMaintenance(id: PaymentGatewayId): boolean {
   // Also reject direct API requests for the removed gateway.
-  if (id === "whop") return true;
+  // The crypto tile opens the manual Binance flow; legacy NOWPayments requests stay blocked.
+  if (id === "whop" || id === "crypto") return true;
   if (id === "stripe") return !STRIPE_ACTIVE;
   return Boolean(PAYMENT_GATEWAYS.find((g) => g.id === id)?.maintenance);
 }

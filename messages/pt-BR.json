@@ -263,7 +263,7 @@
       "tabs": {
         "yape": "Yape / Plin",
         "manual": "Transferência automática",
-        "crypto": "Cripto (USDT)",
+        "crypto": "Binance Pay",
         "abroad": "Estou em outro país"
       },
       "yape": {
@@ -282,24 +282,24 @@
         "tip": "Transferiu e não enviou o print? Vá em “Minhas recargas”, mais abaixo, e toque em “Enviar comprovante”."
       },
       "crypto": {
-        "step1": "Escolha “Cripto (USDT)” e digite quanto quer na carteira (mínimo $12).",
-        "step2": "Abre a página de pagamento da NOWPayments com um endereço USDT.",
-        "step3": "Envie os USDT pela rede TRC20 (Tron). Tem que chegar o valor exato que a NOWPayments mostra. Se usar outra rede, o pagamento se perde.",
-        "step4": "Quando a rede confirma, o saldo entra sozinho.",
-        "time": "Chega sozinho em poucos minutos",
-        "tip": "A Binance desconta a taxa de rede do que você digita. Digite o valor da NOWPayments mais a taxa e confira que o «valor a receber» seja igual ao da NOWPayments. Se chegar menos, a recarga não é creditada."
+        "step1": "Escolha “Binance Pay” e informe quanto deseja receber na carteira. Sua taxa acordada será aplicada.",
+        "step2": "Confira o total em USDT e o e-mail do Binance Pay mostrado na tela.",
+        "step3": "Envie o total pelo Binance Pay para esse e-mail e anexe o comprovante completo com o ID da ordem.",
+        "step4": "A gerência analisa o pagamento e credita o saldo após a aprovação.",
+        "time": "Crédito após aprovação da gerência",
+        "tip": "Anexe o comprovante completo do Binance Pay com destinatário, valor, moeda e ID da ordem. A gerência verificará o pagamento."
       },
       "abroad": {
         "step1": "Yape, Plin e transferência BCP são do Peru. Da Colômbia, Equador ou Brasil o mais fácil é pagar com USDT.",
         "step2": "Compre USDT na Binance P2P com seu banco local (Nequi, Bancolombia, Banco Pichincha, Pix…) ou com cartão.",
-        "step3": "Escolha “Cripto (USDT)” aqui e envie os USDT pela rede TRC20. O saldo entra sozinho.",
-        "time": "Chega sozinho em poucos minutos",
-        "tip": "Para enviar dinheiro à nossa conta BCP, use “Transferência automática”. Para enviar USDT pela Binance ou outra carteira, use “Cripto (USDT)”."
+        "step3": "Escolha “Binance Pay”, envie para o e-mail indicado e anexe o comprovante para análise da gerência.",
+        "time": "Crédito após aprovação da gerência",
+        "tip": "Para transferências BCP, use “Transferência automática”. Para USDT, escolha “Binance Pay” e envie ao e-mail indicado."
       },
       "faq": {
         "notCredited": {
           "q": "Paguei e não vejo meu saldo",
-          "a": "Com Yape ou cripto, o saldo entra quando o provedor confirma o pagamento. Confira Minhas recargas: envie o comprovante se estiver faltando. Em análise significa que a validação automática não foi concluída. Não pague novamente; avisaremos quando for resolvido."
+          "a": "O Yape credita após a confirmação do provedor. Binance Pay exige comprovante e aprovação da gerência. Consulte Minhas recargas; se estiver em análise, não pague novamente."
         },
         "invalidPayment": {
           "q": "O Yape diz “Pagamento inválido”",
@@ -715,7 +715,10 @@
       "cci": "CCI · a partir de outro banco",
       "reviewWait": "Estamos lendo o comprovante. Nossa equipe concluirá a análise.",
       "binanceInstructions": "Envie o valor indicado em USDT pelo Binance Pay para este e-mail. Guarde o comprovante e envie-o na próxima etapa.",
-      "binanceReview": "Seu comprovante será enviado à gerência para revisão manual. O saldo será creditado após a aprovação."
+      "binanceReview": "Seu comprovante será enviado à gerência para revisão manual. O saldo será creditado após a aprovação.",
+      "binanceSubtitle": "USDT por e-mail · análise da gerência",
+      "binanceAmountHint": "Informe o saldo que deseja receber. Você verá o total em USDT com sua taxa acordada.",
+      "binanceUploadDesc": "Anexe o comprovante completo do Binance Pay com destinatário, valor, moeda e ID da ordem. A gerência verificará o pagamento."
     },
     "reloadSection": {
       "title": "Recarregar saldo",
@@ -837,7 +840,7 @@
       "whopDesc": "Cartão, Apple Pay e wallets globais",
       "cobranaDesc": "Pague com Yape, Plin ou transferência bancária",
       "manualName": "Transferência automática",
-      "manualDesc": "Transferência para BCP · validação automática"
+      "manualDesc": "Transferência BCP ou Binance Pay · com comprovante"
     },
     "clienteScoped": {
       "eyebrow": "Histórico Hecom",
