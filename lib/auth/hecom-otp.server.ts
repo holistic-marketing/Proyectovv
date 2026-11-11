@@ -433,7 +433,7 @@ export async function registerHecomClientOtp(input: {
   if (!email.includes("@")) {
     return { ok: false, error: "Correo inválido.", status: 400 };
   }
-  const address = String(input.address ?? "").replace(/s+/g, " ").trim();
+  const address = String(input.address ?? "").replace(/\s+/g, " ").trim();
   if (address.length < 8 || address.length > 240) {
     return { ok: false, error: "Escribe tu dirección completa (calle, número, ciudad).", status: 400 };
   }

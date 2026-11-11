@@ -93,7 +93,7 @@ function validateForm(
   if (!isValidPhone(country, values.phone)) {
     return t.errPhone;
   }
-  if (values.address.replace(/s+/g, " ").trim().length < 8) {
+  if (values.address.replace(/\s+/g, " ").trim().length < 8) {
     return t.errAddress;
   }
   if (!values.email.trim().includes("@")) {
@@ -204,7 +204,7 @@ export function RegisterForm({ locale = "es" }: { locale?: LandingLocale }) {
           name: joinFullName(values),
           dni: values.dni.trim().replace(/\D/g, ""),
           phone: values.phone.trim(),
-          address: values.address.replace(/s+/g, " ").trim(),
+          address: values.address.replace(/\s+/g, " ").trim(),
           country: country.code,
           email: values.email.trim(),
           // Se guardan al crear el cliente: el usuario recién existe tras el OTP.

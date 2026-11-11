@@ -1,4 +1,4 @@
-import { signOutAdminAction } from "@/app/actions/admin-auth";
+import { AdminSignOutButton } from "@/components/admin/AdminSignOutButton.client";
 import { routes } from "@/config/routes";
 import { EcomdyLogo } from "@/components/brand/EcomdyLogo";
 import { siteConfig } from "@/config/site";
@@ -39,14 +39,9 @@ export default function UnauthorizedPage() {
           >
             Volver al login admin
           </a>
-          <form action={signOutAdminAction}>
-            <button
-              type="submit"
-              className="inline-flex h-11 items-center rounded-xl border border-white/15 bg-white/5 px-5 text-[14px] font-semibold text-[var(--auth-text)] transition-colors hover:bg-white/10"
-            >
-              Cerrar sesión
-            </button>
-          </form>
+          <AdminSignOutButton className="inline-flex h-11 items-center rounded-xl border border-white/15 bg-white/5 px-5 text-[14px] font-semibold text-[var(--auth-text)] transition-colors hover:bg-white/10 disabled:opacity-60">
+            Cerrar sesión
+          </AdminSignOutButton>
         </div>
       </div>
     </main>
