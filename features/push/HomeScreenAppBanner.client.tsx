@@ -8,7 +8,7 @@ const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 const PUSH_SNOOZE_KEY = "holistic-push-snooze-until";
 const INSTALL_SNOOZE_KEY = "holistic-install-snooze-until";
 /** Que el cliente vea primero su panel; la invitación entra después. */
-const SHOW_DELAY_MS = 4000;
+const SHOW_DELAY_MS = 500;
 
 // Safari en modo privado (y bloqueos de cookies) puede lanzar al tocar localStorage.
 function snoozed(key: string): boolean {
