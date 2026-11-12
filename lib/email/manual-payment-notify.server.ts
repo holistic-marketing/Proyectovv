@@ -14,7 +14,7 @@ import { getPaymentIntentByIdInternal } from "@/lib/payments/payment-intents.ser
 import { getManualBankAccounts } from "@/lib/payments/manual-bank-accounts.server";
 import { RECHARGE_BOT_SOURCE, YAPE_RECIPIENT } from "@/lib/payments/yape/recipient";
 import { getHecomCliente } from "@/lib/hecom/clientes.server";
-import { listHecomOtpStaffEmails } from "@/lib/auth/hecom-otp.server";
+import { listStaffEmails } from "@/lib/auth/staff.server";
 import {
   describeVoucherChannel,
   normalizeVoucherBank,
@@ -47,10 +47,10 @@ const MANUAL_PAYMENT_MANAGER_FALLBACKS = [
  * Gerentes / ops que deben enterarse de pagos manuales pendientes: los mismos
  * que pueden entrar como gerente (lista fija + env), aunque falten en Vercel.
  */
-export function resolveManualPaymentManagerEmails(): string[] {
+export async function resolveManualPaymentManagerEmails(): Promise<string[]> {
   return uniqueEmails([
     ...MANUAL_PAYMENT_MANAGER_FALLBACKS,
-    ...listHecomOtpStaffEmails(),
+    ...(await listStaffEmails()),
     ...serverEnv.paymentsSuperAdminEmails,
     serverEnv.supportEmail,
   ]);
@@ -297,7 +297,7 @@ export async function notifyManagersManualPaymentPendingBestEffort(input: {
   /** realprofit_cod → /payments/profit; hecom_missing_cobro → /payments/missing-cobros */
   purpose?: string | null;
 }): Promise<void> {
-  const managers = resolveManualPaymentManagerEmails();
+  const managers = await resolveManualPaymentManagerEmails();
   if (managers.length === 0) {
     console.warn("[email] no manager emails for manual payment pending");
     return;

@@ -779,7 +779,7 @@ async function alertIfNeeded(
     if (alreadyAlerted) return { alerted: false, reason: "ya_avisado" };
   }
 
-  const managers = resolveManualPaymentManagerEmails();
+  const managers = await resolveManualPaymentManagerEmails();
   if (managers.length === 0) return { alerted: false, reason: "sin_destinatarios" };
 
   const email = buildGuardEmail(incidents, undefined, mode);

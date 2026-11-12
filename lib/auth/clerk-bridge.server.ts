@@ -70,8 +70,14 @@ function verifiedPrimaryEmail(
   if (primary.verification?.status !== "verified") {
     return { ok: false, error: "clerk_email_unverified" };
   }
-  const email = normalizeHecomOtpEmail(primary.emailAddress);
-  return email ? { ok: true, email } : { ok: false, error: "clerk_email" };
+  // Identidad = exactamente el correo que Clerk verificó. Si la normalización lo cambiara
+  // (alias), sería OTRO correo y otra cuenta: se rechaza en vez de mapearlo.
+  const email = primary.emailAddress.trim().toLowerCase();
+  if (!email.includes("@")) return { ok: false, error: "clerk_email" };
+  if (normalizeHecomOtpEmail(primary.emailAddress) !== email) {
+    return { ok: false, error: "clerk_email_alias" };
+  }
+  return { ok: true, email };
 }
 
 function clerkFullName(clerkUser: ClerkUser, registration: RegistrationMetadata | null, email: string): string {

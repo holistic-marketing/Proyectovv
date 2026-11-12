@@ -503,7 +503,7 @@ async function notifyAutocharge(input: {
       });
     }
 
-    const managers = resolveManualPaymentManagerEmails();
+    const managers = await resolveManualPaymentManagerEmails();
     if (managers.length === 0) return;
     const label =
       input.kind === "failed"

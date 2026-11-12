@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth/session.server";
 import { userIsAllowedAdmin } from "@/lib/admin/allowlist";
 import { sessionIsGerente } from "@/lib/auth/tester-dashboard-mode.server";
 import {
-  isHecomOtpLoginEnabled,
   resolveHecomClientesForEmail,
   userMayAccessHecomCliente,
 } from "@/lib/auth/hecom-otp.server";
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (isHecomOtpLoginEnabled() && !isAdmin && !isStaff) {
+  if (!isAdmin && !isStaff) {
     const allowed = await resolveHecomClientesForEmail(session.email);
     const linkedIds = allowed.map((item) => item.id);
     if (

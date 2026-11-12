@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { findHecomClientesByName } from "@/lib/hecom/clientes.server";
 import { normalizeHecomOtpEmail } from "@/lib/auth/hecom-otp-email";
+import { createOtpLookupToken } from "@/lib/auth/otp-lookup-token.server";
 import { logHecomOtp, maskEmail } from "@/lib/auth/hecom-otp-log.server";
 
 const LOOKUP_COOLDOWN_SECONDS = 8;
@@ -113,10 +114,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 503 });
   }
 
+  // Nunca se devuelve el correo completo (era una fuga: nombre → correo de cualquier cliente).
+  // El navegador recibe un token firmado que el servidor canjea al pedir / verificar el código.
   type Match = {
     name: string;
-    email: string;
     emailMasked: string;
+    lookupToken: string;
   };
 
   const matches: Match[] = [];
@@ -126,11 +129,19 @@ export async function POST(request: Request) {
     for (const raw of cliente.emails) {
       const email = normalizeHecomOtpEmail(raw);
       if (!email.includes("@") || seen.has(email)) continue;
+      const lookupToken = createOtpLookupToken(email);
+      if (!lookupToken) {
+        logHecomOtp("error", "email_lookup_no_signing_key", {});
+        return NextResponse.json(
+          { error: "La búsqueda por nombre no está disponible. Escribe tu correo." },
+          { status: 503 },
+        );
+      }
       seen.add(email);
       matches.push({
         name: cliente.name,
-        email,
         emailMasked: maskEmailDisplay(email),
+        lookupToken,
       });
       if (matches.length >= 6) break;
     }

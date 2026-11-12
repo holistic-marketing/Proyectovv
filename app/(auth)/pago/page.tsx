@@ -3,7 +3,7 @@ import { routes } from "@/config/routes";
 import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { MembershipCheckout } from "@/features/contracts/components/MembershipCheckout.client";
 import { loadMembershipCaptureStep, registrationNextPath } from "@/features/contracts/lib/registration-contract.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function MembershipCheckoutPage() {
@@ -15,7 +15,7 @@ export default async function MembershipCheckoutPage() {
   if (!user.email_confirmed_at) {
     redirect(`${routes.verifyOtp}?email=${encodeURIComponent(user.email)}`);
   }
-  if (isHecomOtpStaffEmail(user.email)) redirect(routes.clientes);
+  if ((await isStaffUser(user.email ?? ""))) redirect(routes.clientes);
 
   const next = await registrationNextPath(user.email);
   if (next === "/contrato") redirect(routes.serviceContract);

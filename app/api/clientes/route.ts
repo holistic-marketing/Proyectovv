@@ -4,7 +4,6 @@ import { getSession } from "@/lib/auth/session.server";
 import { userIsAllowedAdmin } from "@/lib/admin/allowlist";
 import { sessionIsGerente } from "@/lib/auth/tester-dashboard-mode.server";
 import {
-  isHecomOtpLoginEnabled,
   resolveHecomClientesForEmail,
 } from "@/lib/auth/hecom-otp.server";
 import { getHecomSupabaseConfig } from "@/lib/hecom/supabase.server";
@@ -83,7 +82,7 @@ export async function GET() {
     let clientes;
     let source: string;
 
-    if (isHecomOtpLoginEnabled() && !isAdmin && !isStaff) {
+    if (!isAdmin && !isStaff) {
       clientes = await resolveHecomClientesForEmail(session.email);
       source = "hecom_email_scope";
       steps.push({
@@ -145,9 +144,9 @@ export async function GET() {
       count: clients.length,
       clients,
       steps,
-      scopedToEmail: isHecomOtpLoginEnabled() && !isAdmin && !isStaff,
+      scopedToEmail: !isAdmin && !isStaff,
       note:
-        isHecomOtpLoginEnabled() && !isAdmin && !isStaff
+        !isAdmin && !isStaff
           ? "Solo clientes vinculados a tu correo en Hecom."
           : "Fuente: Hecom Club CRM. Gastos TikTok usan TIKTOK_ACCESS_TOKEN de agencia + advertiser_id por cliente.",
     });

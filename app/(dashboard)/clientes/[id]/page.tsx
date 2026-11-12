@@ -15,7 +15,7 @@ import { dashboardClasses } from "@/lib/ui/dashboard-classes";
 import { SelectHecomClienteOnMount } from "@/features/clientes/components/SelectHecomClienteOnMount.client";
 import { HecomClienteAvatar } from "@/features/clientes/components/HecomClienteAvatar.client";
 import { ClienteFeeCard } from "@/features/clientes/components/ClienteFeeCard.client";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { isPaymentsSuperAdminEmail } from "@/lib/payments/funding-roles.server";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export default async function ClienteVistaPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireSession();
-  const isStaff = isHecomOtpStaffEmail(session.email) || isPaymentsSuperAdminEmail(session.email);
+  const isStaff = (await isStaffUser(session.email)) || isPaymentsSuperAdminEmail(session.email);
   const { id } = await params;
   const hecomCfg = getHecomSupabaseConfig();
 

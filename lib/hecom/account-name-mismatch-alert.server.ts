@@ -39,7 +39,7 @@ export async function alertNameMismatches(list: NameMismatch[]): Promise<{ alert
     return { alerted: false, reason: "ya_avisado" };
   }
 
-  const managers = resolveManualPaymentManagerEmails();
+  const managers = await resolveManualPaymentManagerEmails();
   if (managers.length === 0) return { alerted: false, reason: "sin_destinatarios" };
 
   const subject = `[Revisar] ${list.length === 1 ? "1 cuenta TikTok tiene" : `${list.length} cuentas TikTok tienen`} el nombre de otro cliente`;

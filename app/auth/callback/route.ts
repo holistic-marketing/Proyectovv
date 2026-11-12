@@ -8,6 +8,7 @@ import {
   isHecomOtpLoginEnabled,
 } from "@/lib/auth/hecom-otp.server";
 import { logHecomOtp, maskEmail } from "@/lib/auth/hecom-otp-log.server";
+import { userMayUsePanel } from "@/lib/auth/panel-access.server";
 
 type CookieToSet = {
   name: string;
@@ -119,6 +120,25 @@ export async function GET(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Confirmaciones de registro público de Supabase (type=signup) y cualquier otro enlace:
+  // solo staff, clientes Hecom, invitados o quien ya tiene organización se quedan con sesión.
+  if (!user) return fail("no_user");
+  const access = await userMayUsePanel({ userId: user.id, email: user.email });
+  if (!access.ok) {
+    logHecomOtp("warn", "callback_rejected", {
+      email: maskEmail(user.email ?? ""),
+      type: typeParam,
+      reason: access.reason,
+    });
+    await supabase.auth.signOut();
+    const target = new URL(routes.login, serverEnv.appUrl);
+    target.searchParams.set(
+      "error",
+      access.reason === "hecom_unavailable" ? "hecom_unavailable" : "not_allowed",
+    );
+    return redirectWithSession(target);
+  }
 
   const isHecomFlow =
     flow === "hecom" || user?.user_metadata?.hecom_otp === true;

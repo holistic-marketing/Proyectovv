@@ -58,6 +58,9 @@ function FieldIcon({ children }: { children: React.ReactNode }) {
 
 const inputClassName = "auth-field";
 
+/** Coincidencia de «¿No sabes tu correo?»: el servidor ya no envía el correo completo. */
+type LookupMatch = { name: string; emailMasked: string; lookupToken: string };
+
 interface LoginFormProps {
   hecomOtpEnabled?: boolean;
   locale?: LandingLocale;
@@ -83,9 +86,9 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupHint, setLookupHint] = useState<string | null>(null);
-  const [lookupMatches, setLookupMatches] = useState<
-    Array<{ name: string; email: string; emailMasked: string }>
-  >([]);
+  const [lookupMatches, setLookupMatches] = useState<LookupMatch[]>([]);
+  // Coincidencia elegida en «¿No sabes tu correo?»: solo el token, nunca el correo completo.
+  const [selectedLookup, setSelectedLookup] = useState<LookupMatch | null>(null);
 
   async function handleLookup() {
     setLookupLoading(true);
@@ -102,7 +105,7 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
       const payload = (await response.json()) as {
         error?: string;
         message?: string;
-        matches?: Array<{ name: string; email: string; emailMasked: string }>;
+        matches?: LookupMatch[];
       };
 
       if (!response.ok) {
@@ -122,8 +125,9 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
     }
   }
 
-  function applyLookupEmail(nextEmail: string) {
-    setEmail(nextEmail);
+  function applyLookupMatch(match: LookupMatch) {
+    setSelectedLookup(match);
+    setEmail(match.emailMasked);
     setLookupOpen(false);
     setLookupError(null);
     setLookupHint(null);
@@ -137,15 +141,19 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
     setError(null);
 
     try {
+      const lookup = selectedLookup;
       const response = await fetch(routes.api.auth.otpRequest, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify(
+          lookup ? { lookupToken: lookup.lookupToken } : { email: email.trim() },
+        ),
       });
       const payload = (await response.json()) as {
         error?: string;
         message?: string;
         email?: string;
+        emailMasked?: string;
         retryAfterSec?: number;
         notRegistered?: boolean;
       };
@@ -153,7 +161,7 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
       if (response.ok && payload.notRegistered) {
         // Correo sin cuenta: no llega código. Lo llevamos a crear la cuenta.
         const registerUrl = new URL(routes.register, window.location.origin);
-        registerUrl.searchParams.set("email", email.trim().toLowerCase());
+        if (!lookup) registerUrl.searchParams.set("email", email.trim().toLowerCase());
         registerUrl.searchParams.set("from", "login");
         router.push(`${registerUrl.pathname}${registerUrl.search}`);
         return;
@@ -167,11 +175,16 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
         return;
       }
 
-      const canonicalEmail =
-        payload.email?.trim() || email.trim().toLowerCase();
-
       const verifyUrl = new URL(routes.verifyOtp, window.location.origin);
-      verifyUrl.searchParams.set("email", canonicalEmail);
+      if (lookup) {
+        // Sin correo en la URL: el token se canjea en el servidor al verificar.
+        verifyUrl.searchParams.set("lt", lookup.lookupToken);
+        verifyUrl.searchParams.set("em", payload.emailMasked ?? lookup.emailMasked);
+      } else {
+        const canonicalEmail =
+          payload.email?.trim() || email.trim().toLowerCase();
+        verifyUrl.searchParams.set("email", canonicalEmail);
+      }
       verifyUrl.searchParams.set("flow", "hecom");
       verifyUrl.searchParams.set("sent", "1");
       if (payload.retryAfterSec) {
@@ -263,7 +276,11 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
               spellCheck={false}
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                // Escribir a mano descarta la coincidencia elegida por nombre.
+                setSelectedLookup(null);
+                setEmail(event.target.value);
+              }}
               placeholder={t.emailPlaceholder}
               className={inputClassName}
               disabled={loading}
@@ -335,10 +352,10 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
               {lookupMatches.length > 0 ? (
                 <ul className="space-y-2">
                   {lookupMatches.map((match) => (
-                    <li key={`${match.email}-${match.name}`}>
+                    <li key={match.lookupToken}>
                       <button
                         type="button"
-                        onClick={() => applyLookupEmail(match.email)}
+                        onClick={() => applyLookupMatch(match)}
                         className={styles.lookupMatch}
                       >
                         <span className="min-w-0">

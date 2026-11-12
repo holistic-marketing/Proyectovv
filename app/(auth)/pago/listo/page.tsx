@@ -4,7 +4,7 @@ import { routes } from "@/config/routes";
 import { AuthFormHeading, AuthNotice } from "@/features/auth/components/AuthFormUi";
 import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { completeNasCheckoutReturn, registrationNextPath } from "@/features/contracts/lib/registration-contract.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function MembershipCheckoutReturnPage({
@@ -17,7 +17,7 @@ export default async function MembershipCheckoutReturnPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user?.email) redirect(routes.login);
-  if (isHecomOtpStaffEmail(user.email)) redirect(routes.clientes);
+  if ((await isStaffUser(user.email ?? ""))) redirect(routes.clientes);
 
   const params = await searchParams;
   const token = typeof params.token === "string" ? params.token : "";

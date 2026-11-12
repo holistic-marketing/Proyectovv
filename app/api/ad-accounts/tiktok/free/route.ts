@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { isPaymentsSuperAdminEmail } from "@/lib/payments/funding-roles.server";
 import {
   assignFreeAccountsToMember,
@@ -36,7 +36,7 @@ async function requireStaff() {
   const session = await getSession();
   if (!session) return { error: NextResponse.json({ error: "No autenticado." }, { status: 401 }) };
   const email = String(session.email ?? "");
-  if (!isHecomOtpStaffEmail(email) && !isPaymentsSuperAdminEmail(email)) {
+  if (!(await isStaffUser(email)) && !isPaymentsSuperAdminEmail(email)) {
     return { error: NextResponse.json({ error: "Solo gerencia." }, { status: 403 }) };
   }
   return { session, email };

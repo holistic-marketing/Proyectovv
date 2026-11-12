@@ -1,5 +1,5 @@
 import "server-only";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { staffEmailMatcher } from "@/lib/auth/staff.server";
 import { isPaymentsSuperAdminEmail } from "@/lib/payments/funding-roles.server";
 import { sendWebPushWithStats } from "@/lib/push/send-web-push.server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -51,8 +51,8 @@ export function parseBroadcastInput(raw: unknown): BroadcastInput {
   return { title, body, url, audience };
 }
 
-function isTeamEmail(email: string): boolean {
-  return isHecomOtpStaffEmail(email) || isPaymentsSuperAdminEmail(email);
+function isTeamEmail(email: string, isStaffEmail: (email: string) => boolean): boolean {
+  return isStaffEmail(email) || isPaymentsSuperAdminEmail(email);
 }
 
 type Recipient = { id: string; organizationId: string | null };
@@ -63,6 +63,8 @@ async function resolveRecipients(audience: BroadcastAudience, senderId: string):
     return [{ id: senderId, organizationId: null }];
   }
   const out: Recipient[] = [];
+  // Roster de staff_members leído una vez para todo el recorrido.
+  const isStaffEmail = await staffEmailMatcher();
   for (let from = 0; ; from += 1000) {
     const { data, error } = await admin
       .from("profiles")
@@ -72,7 +74,7 @@ async function resolveRecipients(audience: BroadcastAudience, senderId: string):
     if (error) throw new Error("No se pudo leer la lista de usuarios.");
     for (const row of data ?? []) {
       const email = String(row.email ?? "");
-      if (audience === "clientes" && isTeamEmail(email)) continue;
+      if (audience === "clientes" && isTeamEmail(email, isStaffEmail)) continue;
       out.push({ id: String(row.id), organizationId: null });
     }
     if (!data || data.length < 1000) break;

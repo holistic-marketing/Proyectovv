@@ -266,6 +266,11 @@ export const config = {
     "/contratos-registro/:path*",
     "/education",
     "/education/:path*",
+    "/simulador",
+    "/simulador/:path*",
+    // Logout y demás APIs de auth: pasan por clerkMiddleware para que auth() pueda
+    // revocar la sesión de Clerk en el servidor.
+    "/api/auth/:path*",
     "/admin/:path*",
   ],
 };

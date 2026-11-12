@@ -1,5 +1,5 @@
 import "server-only";
-import { listHecomOtpStaffEmails } from "@/lib/auth/hecom-otp.server";
+import { listStaffEmails } from "@/lib/auth/staff.server";
 import { createNotificationBestEffort } from "@/lib/notifications/create-notification.server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SessionUser } from "@/types/auth";
@@ -175,7 +175,7 @@ export async function ensureAdvisorSchedules(): Promise<ScheduleDto[]> {
   const admin = db();
   const catalog = new Map<string, AdvisorSchedule>();
   for (const advisor of SEEDED_ADVISORS) catalog.set(advisor.email, advisor);
-  for (const email of listHecomOtpStaffEmails()) {
+  for (const email of await listStaffEmails()) {
     if (!catalog.has(email)) catalog.set(email, defaultAdvisor(email, displayNameFor(email)));
   }
 

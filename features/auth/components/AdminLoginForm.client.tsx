@@ -78,19 +78,22 @@ export function AdminLoginForm() {
       return;
     }
 
+    // Solo admins (ADMIN_ALLOWED_EMAILS / _USER_IDS) conservan la sesión: cualquier otra
+    // cuenta de Supabase con contraseña no debe quedar logueada en adsholistic.com.
+    const allowed = await assertAdminAccess().catch(() => false);
+    if (!allowed) {
+      await supabase.auth.signOut();
+      setError("Tu usuario no está habilitado para el panel admin.");
+      setLoading(false);
+      return;
+    }
+
     if (data.user && !data.user.email_confirmed_at) {
       const verifyUrl = new URL(routes.verifyOtp, window.location.origin);
       verifyUrl.searchParams.set("email", email.trim());
       verifyUrl.searchParams.set("context", "admin");
       verifyUrl.searchParams.set("next", adminDestination);
       router.push(`${verifyUrl.pathname}${verifyUrl.search}`);
-      router.refresh();
-      return;
-    }
-
-    const allowed = await assertAdminAccess();
-    if (!allowed) {
-      router.push(routes.adminUnauthorized);
       router.refresh();
       return;
     }

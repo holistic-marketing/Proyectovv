@@ -74,6 +74,16 @@ export function isHecomOtpStaffEmail(emailRaw: string): boolean {
   return DEFAULT_STAFF_EMAILS.includes(email);
 }
 
+/**
+ * Staff vigente según `staff_members` (+ acceso de emergencia). Import dinámico porque
+ * staff.server importa este módulo. Usar esto en vez de `isHecomOtpStaffEmail`, que es
+ * solo la lista legada de respaldo.
+ */
+async function isActiveStaffEmail(email: string): Promise<boolean> {
+  const { isStaffUser } = await import("@/lib/auth/staff.server");
+  return isStaffUser(email);
+}
+
 /** Correos que pueden atender reuniones de soporte. */
 export function listHecomOtpStaffEmails(): string[] {
   const emails = new Set<string>();
@@ -114,7 +124,9 @@ export function userMayAccessHecomCliente(input: {
   clienteId: string;
 }): boolean {
   if (input.isAdmin || input.isStaff) return true;
-  if (!isHecomOtpLoginEnabled()) return true;
+  // Antes: con AUTH_HECOM_OTP_LOGIN apagado se dejaba pasar a todos. El aislamiento entre
+  // clientes no depende del método de login: sin el flag se niega (falla cerrado).
+  if (!isHecomOtpLoginEnabled()) return false;
   return input.linkedClienteIds.includes(input.clienteId);
 }
 
@@ -197,9 +209,10 @@ export async function requestHecomClientOtp(input: {
   }
 
   const emailMasked = maskEmail(email);
+  const isStaff = await isActiveStaffEmail(email);
   logHecomOtp("info", "request_start", {
     email: emailMasked,
-    isStaff: isHecomOtpStaffEmail(email),
+    isStaff,
     isTest: isOtpTestClienteEmail(email),
     provider: serverEnv.emailProvider,
     hasResendKey: Boolean(serverEnv.resendApiKey),
@@ -234,7 +247,6 @@ export async function requestHecomClientOtp(input: {
     return { ok: false, error: message, status: 503 };
   }
 
-  const isStaff = isHecomOtpStaffEmail(email);
   const isTest = isOtpTestClienteEmail(email);
 
   if (clientes.length === 0 && !isStaff && !isTest) {
@@ -549,7 +561,7 @@ export async function provisionHecomClienteAccess(input: {
   nextPath: "/overview" | "/clientes" | "/contrato" | "/pago";
 }> {
   const email = normalizeEmail(input.email);
-  const isStaff = isHecomOtpStaffEmail(email);
+  const isStaff = await isActiveStaffEmail(email);
 
   if (isStaff) {
     // Gerente: no reutilizar cliente del login anterior; va al picker con todos.

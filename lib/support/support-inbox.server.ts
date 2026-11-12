@@ -15,7 +15,7 @@ import {
   listHecomClientes,
   type HecomCliente,
 } from "@/lib/hecom/clientes.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser, staffEmailMatcher } from "@/lib/auth/staff.server";
 import { supportChatTimestamps } from "@/lib/support/chat-time";
 
 async function uploadInboxAttachment(
@@ -529,9 +529,10 @@ export async function listInboxContacts(filters?: {
     return [];
   }
 
-  // Sacar gerentes / staff: la lista es solo clientes CRM.
+  // Sacar gerentes / staff (staff_members): la lista es solo clientes CRM.
+  const isStaffEmail = await staffEmailMatcher();
   hecomClientes = hecomClientes.filter(
-    (cliente) => !cliente.emails.some((email) => isHecomOtpStaffEmail(email)),
+    (cliente) => !cliente.emails.some((email) => isStaffEmail(email)),
   );
 
   if (hecomClientes.length === 0) return [];
@@ -883,7 +884,8 @@ export async function ensureInboxTicketForHecomCliente(input: {
   if (!cliente) {
     throw new Error("Cliente Hecom no encontrado.");
   }
-  if (cliente.emails.some((email) => isHecomOtpStaffEmail(email))) {
+  const staffFlags = await Promise.all(cliente.emails.map((email) => isStaffUser(email)));
+  if (staffFlags.some(Boolean)) {
     throw new Error("Ese contacto es gerente/staff, no un cliente.");
   }
 

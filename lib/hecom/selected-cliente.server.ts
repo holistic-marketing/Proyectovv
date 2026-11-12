@@ -5,7 +5,6 @@ import { userIsAllowedAdmin } from "@/lib/admin/allowlist";
 import { getSession } from "@/lib/auth/session.server";
 import { sessionIsGerente } from "@/lib/auth/tester-dashboard-mode.server";
 import {
-  isHecomOtpLoginEnabled,
   resolveHecomClientesForEmail,
   userMayAccessHecomCliente,
 } from "@/lib/auth/hecom-otp.server";
@@ -151,11 +150,32 @@ const resolveSessionClienteAccess = cache(
   },
 );
 
+/** Fichas del CRM que hoy tienen este correo. Una sola consulta por petición. */
+const crmClienteIdsForEmail = cache(async (email: string): Promise<string[]> => {
+  const clientes = await resolveHecomClientesForEmail(email);
+  return clientes.map((item) => item.id);
+});
+
+/** Vínculo viejo de una ficha que ya no tiene el correo del usuario: se borra (best-effort). */
+async function dropStaleClienteLink(userId: string, clienteId: string): Promise<void> {
+  try {
+    await createAdminClient()
+      .from("hecom_cliente_user_links")
+      .delete()
+      .eq("user_id", userId)
+      .eq("hecom_cliente_id", clienteId);
+  } catch (error) {
+    console.warn("[selected-cliente] stale_link_delete_failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /**
  * ¿La sesión actual puede usar esta ficha Hecom?
- * Staff/admin: cualquiera. Cliente: sus fichas vinculadas al hacer login
- * (hecom_cliente_user_links, escritas solo por el servidor) o las del CRM por
- * su correo, con la misma regla que usa la selección (userMayAccessHecomCliente).
+ * Staff/admin: cualquiera. Cliente: solo si su correo sigue HOY en la ficha del CRM.
+ * `hecom_cliente_user_links` ya no concede acceso por sí solo: quitar el correo de la
+ * ficha en Hecom revoca el acceso (y borra el vínculo viejo). Si el CRM no responde, se niega.
  */
 const sessionMayUseHecomCliente = cache(
   async (clienteId: string): Promise<boolean> => {
@@ -163,39 +183,31 @@ const sessionMayUseHecomCliente = cache(
     if (!access) return false;
     if (access.isStaffLike) return true;
 
+    let linkedClienteIds: string[];
     try {
-      const { data } = await createAdminClient()
-        .from("hecom_cliente_user_links")
-        .select("hecom_cliente_id")
-        .eq("user_id", access.userId)
-        .eq("hecom_cliente_id", clienteId)
-        .limit(1);
-      if ((data ?? []).length > 0) return true;
+      linkedClienteIds = await crmClienteIdsForEmail(access.email);
     } catch (error) {
-      console.warn("[selected-cliente] link_check_failed", {
+      // Si el CRM no responde, negar: mejor panel vacío que cartera ajena.
+      console.warn("[selected-cliente] crm_check_failed", {
         message: error instanceof Error ? error.message : String(error),
       });
+      return false;
     }
 
-    let linkedClienteIds: string[] = [];
-    if (isHecomOtpLoginEnabled()) {
-      try {
-        const allowed = await resolveHecomClientesForEmail(access.email);
-        linkedClienteIds = allowed.map((item) => item.id);
-      } catch (error) {
-        // Si el CRM no responde, negar: mejor panel vacío que cartera ajena.
-        console.warn("[selected-cliente] crm_check_failed", {
-          message: error instanceof Error ? error.message : String(error),
-        });
-        return false;
-      }
-    }
-    return userMayAccessHecomCliente({
+    const allowed = userMayAccessHecomCliente({
       isAdmin: access.isAdmin,
       isStaff: access.isStaff,
       linkedClienteIds,
       clienteId,
     });
+    if (!allowed) {
+      console.warn("[selected-cliente] cliente_not_in_crm_for_email", {
+        userId: access.userId,
+        clienteId,
+      });
+      await dropStaleClienteLink(access.userId, clienteId);
+    }
+    return allowed;
   },
 );
 
@@ -209,6 +221,8 @@ async function resolveOnlyLinkedCliente(userId: string): Promise<SelectedHecomCl
       .limit(2);
     const ids = [...new Set((data ?? []).map((r) => String(r.hecom_cliente_id ?? "")).filter(Boolean))];
     if (ids.length !== 1) return null;
+    // El vínculo solo sirve de pista: la ficha tiene que seguir siendo del usuario en el CRM.
+    if (!(await sessionMayUseHecomCliente(ids[0]!))) return null;
     const { data: cliente } = await createHecomAdminClient()
       .from("clientes")
       .select("name")

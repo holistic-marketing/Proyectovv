@@ -8,7 +8,7 @@ import {
   registrationNextPath,
   serviceContractAlreadySent,
 } from "@/features/contracts/lib/registration-contract.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ClientContractPage() {
@@ -20,7 +20,7 @@ export default async function ClientContractPage() {
   if (!user.email_confirmed_at) {
     redirect(`${routes.verifyOtp}?email=${encodeURIComponent(user.email)}`);
   }
-  if (isHecomOtpStaffEmail(user.email)) redirect(routes.clientes);
+  if ((await isStaffUser(user.email ?? ""))) redirect(routes.clientes);
   if (!registrationContractFlowEnabled) redirect(routes.overview);
   if (await serviceContractAlreadySent(user.email)) {
     const next = await registrationNextPath(user.email);

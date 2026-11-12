@@ -78,7 +78,7 @@ export async function notifyPartnerEvent(event: PartnerEvent): Promise<void> {
     const brand = p.company_name?.trim() || p.name;
     const who = p.company_name ? `${p.name} (${p.company_name})` : p.name;
     const link = `${SITE}${partnerLandingPath(p.slug)}`;
-    const managers = resolveManualPaymentManagerEmails();
+    const managers = await resolveManualPaymentManagerEmails();
     const aliado = await clienteInfo(p.hecom_cliente_id);
     const pct = Math.round(Number(p.commission_rate) * 1000) / 10;
 

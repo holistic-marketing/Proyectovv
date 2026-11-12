@@ -6,6 +6,7 @@ import {
 } from "@/lib/auth/demo-personas.server";
 import {
   isHecomOtpStaffEmail,
+  listHecomOtpStaffEmails,
   normalizeHecomOtpEmail,
 } from "@/lib/auth/hecom-otp.server";
 import { serverEnv } from "@/lib/env/env.server";
@@ -91,3 +92,41 @@ export const isStaffUser = cache(async (emailRaw: string): Promise<boolean> => {
   if (current.active.has(email)) return true;
   return isBreakGlassStaffEmail(email);
 });
+
+/**
+ * Comprobación síncrona con el roster ya cargado (una sola lectura): para filtros sobre
+ * muchas filas. Mismas reglas que `isStaffUser`.
+ */
+export async function staffEmailMatcher(): Promise<(emailRaw: string) => boolean> {
+  const current = await getStaffRoster();
+  return (emailRaw: string) => {
+    const email = normalizeHecomOtpEmail(emailRaw ?? "");
+    if (!email) return false;
+    if (isDemoClienteEmail(email)) return false;
+    if (isDemoGerenteEmail(email)) return true;
+    if (!current) return isHecomOtpStaffEmail(email);
+    if (current.inactive.has(email)) return false;
+    if (current.active.has(email)) return true;
+    return isBreakGlassStaffEmail(email);
+  };
+}
+
+/**
+ * Correos de staff activos (avisos a gerentes, asesores de soporte): `staff_members`
+ * activos + acceso de emergencia de Vercel. Sin tabla: la lista legada.
+ */
+export async function listStaffEmails(): Promise<string[]> {
+  const current = await getStaffRoster();
+  if (!current) return listHecomOtpStaffEmails();
+  const emails = new Set<string>();
+  for (const email of [
+    ...current.active,
+    ...serverEnv.authHecomOtpStaffEmails,
+    ...serverEnv.adminAllowedEmails,
+  ]) {
+    const normalized = normalizeHecomOtpEmail(email);
+    if (!normalized || isDemoClienteEmail(normalized) || current.inactive.has(normalized)) continue;
+    emails.add(normalized);
+  }
+  return [...emails];
+}

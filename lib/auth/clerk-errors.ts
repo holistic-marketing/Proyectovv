@@ -10,6 +10,9 @@ export const CLERK_BRIDGE_ERRORS = {
   clerk_link: "No pudimos iniciar tu sesión. Inténtalo de nuevo.",
   clerk_verify: "No pudimos iniciar tu sesión. Inténtalo de nuevo.",
   clerk_session: "Tu sesión se cortó a mitad del ingreso. Vuelve a entrar con tu correo.",
+  clerk_email_alias: "Este correo no puede usarse para entrar. Usa el correo con el que te registraste.",
+  not_allowed: "Este correo no tiene acceso al panel. Crea tu cuenta o escríbenos a soporte.",
+  admin_not_allowed: "Tu usuario no está habilitado para el panel admin.",
 } as const;
 
 export type ClerkBridgeErrorCode = keyof typeof CLERK_BRIDGE_ERRORS;

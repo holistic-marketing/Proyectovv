@@ -45,6 +45,11 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
     () => normalizeHecomOtpEmail(emailParam),
     [emailParam],
   );
+  // Llegada desde «¿No sabes tu correo?»: token firmado + correo enmascarado (sin correo real).
+  const lookupToken = isHecomFlow ? searchParams.get("lt") ?? "" : "";
+  const emailMaskedParam = searchParams.get("em") ?? "";
+  const hasIdentity = Boolean(email || lookupToken);
+  const identityBody = email ? { email } : { lookupToken };
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -82,7 +87,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
     setError(null);
     setSuccess(null);
 
-    if (!email) {
+    if (!hasIdentity || (!email && !isHecomFlow)) {
       setError(t.missingEmailBack);
       setLoading(false);
       return;
@@ -102,7 +107,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
         const response = await fetch(routes.api.auth.otpVerify, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, token: code }),
+          body: JSON.stringify({ ...identityBody, token: code }),
         });
         const payload = (await response.json()) as {
           error?: string;
@@ -206,7 +211,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
   }
 
   async function handleResend() {
-    if (!email) {
+    if (!hasIdentity || (!email && !isHecomFlow)) {
       setError(t.missingEmail);
       return;
     }
@@ -222,7 +227,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
         const response = await fetch(routes.api.auth.otpRequest, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify(identityBody),
         });
         const payload = (await response.json()) as {
           error?: string;
@@ -267,7 +272,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
       <AuthFormHeading title={t.title}>
         {t.sentTo}
         <strong className={styles.destinationEmail}>
-          {email || t.yourEmail}
+          {email || emailMaskedParam || t.yourEmail}
         </strong>
       </AuthFormHeading>
 

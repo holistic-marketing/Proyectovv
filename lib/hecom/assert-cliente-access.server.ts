@@ -2,7 +2,6 @@ import "server-only";
 import { userIsAllowedAdmin } from "@/lib/admin/allowlist";
 import { sessionIsGerente } from "@/lib/auth/tester-dashboard-mode.server";
 import {
-  isHecomOtpLoginEnabled,
   resolveHecomClientesForEmail,
   userMayAccessHecomCliente,
 } from "@/lib/auth/hecom-otp.server";
@@ -32,24 +31,17 @@ export async function assertHecomClienteAccess(
     return;
   }
 
-  if (isHecomOtpLoginEnabled()) {
-    const allowed = await resolveHecomClientesForEmail(session.email);
-    const linkedIds = allowed.map((item) => item.id);
-    if (
-      !userMayAccessHecomCliente({
-        isAdmin,
-        isStaff,
-        linkedClienteIds: linkedIds,
-        clienteId: normalizedClienteId,
-      })
-    ) {
-      throw new Error("No tienes acceso a este cliente.");
-    }
-    return;
-  }
-
-  const selected = await getSelectedHecomCliente(session.id);
-  if (!selected?.id || selected.id !== normalizedClienteId) {
+  // Cliente: la ficha tiene que tener su correo hoy en el CRM (sin depender del flag de login).
+  const allowed = await resolveHecomClientesForEmail(session.email);
+  const linkedIds = allowed.map((item) => item.id);
+  if (
+    !userMayAccessHecomCliente({
+      isAdmin,
+      isStaff,
+      linkedClienteIds: linkedIds,
+      clienteId: normalizedClienteId,
+    })
+  ) {
     throw new Error("No tienes acceso a este cliente.");
   }
 }

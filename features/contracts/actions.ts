@@ -5,7 +5,7 @@ import { requireContractsStaff } from "@/features/contracts/lib/access.server";
 import { contractDocumentHtml } from "@/features/contracts/lib/document-html";
 import { buildContractPdf } from "@/features/contracts/lib/signature";
 import { sendSignatureEnvelope } from "@/features/contracts/lib/signature.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { requireSession } from "@/lib/auth/guards.server";
 import { updateHecomClienteDocument } from "@/lib/hecom/clientes.server";
 import { serverEnv } from "@/lib/env/env.server";
@@ -41,7 +41,7 @@ export async function submitClientServiceContractAction(
     return { ok: false, error: "El contrato de registro está pausado." };
   }
   const session = await requireSession();
-  if (isHecomOtpStaffEmail(session.email)) {
+  if ((await isStaffUser(session.email))) {
     return { ok: false, error: "El contrato lo completa el cliente." };
   }
 
@@ -163,7 +163,7 @@ export async function startNasMembershipCheckoutAction(): Promise<
     return { ok: false, error: "El pago de registro está pausado." };
   }
   const session = await requireSession();
-  if (isHecomOtpStaffEmail(session.email)) {
+  if ((await isStaffUser(session.email))) {
     return { ok: false, error: "El pago de registro lo completa el cliente." };
   }
   const email = session.email.trim().toLowerCase();
@@ -259,7 +259,7 @@ export async function submitMembershipCaptureAction(
     return { ok: false, error: "El pago de registro está pausado." };
   }
   const session = await requireSession();
-  if (isHecomOtpStaffEmail(session.email)) {
+  if ((await isStaffUser(session.email))) {
     return { ok: false, error: "La captura la sube el cliente." };
   }
   const file = formData.get("capture");

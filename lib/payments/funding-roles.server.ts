@@ -5,7 +5,7 @@ import {
 } from "@/lib/auth/demo-personas.server";
 import { getTesterDashboardMode } from "@/lib/auth/tester-dashboard-mode.server";
 import { serverEnv } from "@/lib/env/env.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 
 export type PaymentsFundingMode = "client" | "agency_bm";
 
@@ -97,7 +97,7 @@ export async function resolvePaymentsFundingCapabilities(input: {
     return gerenteFundingCapabilities();
   }
 
-  const isStaff = isHecomOtpStaffEmail(email);
+  const isStaff = await isStaffUser(email);
   const isSuperAdmin = isPaymentsSuperAdminEmail(email);
 
   // Owner instruction 2026-11-05: no role can grant new agency credit.

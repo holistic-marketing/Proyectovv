@@ -2,10 +2,8 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import {
-  completeHecomOtpSession,
-  isHecomOtpStaffEmail,
-} from "@/lib/auth/hecom-otp.server";
+import { completeHecomOtpSession } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { normalizeHecomOtpEmail } from "@/lib/auth/hecom-otp-email";
 import { logHecomOtp, maskEmail } from "@/lib/auth/hecom-otp-log.server";
 import { serverEnv } from "@/lib/env/env.server";
@@ -137,7 +135,7 @@ export async function verifyHecomOtpCode(input: {
       error: message,
     });
     // Sesión ya válida: no botar al login. Staff → lista de clientes.
-    const isStaff = isHecomOtpStaffEmail(user.email ?? email);
+    const isStaff = await isStaffUser(user.email ?? email);
     return {
       ok: true,
       email,

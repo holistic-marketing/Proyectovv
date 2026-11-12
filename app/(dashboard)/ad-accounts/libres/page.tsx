@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { FreeTikTokAccountsManager } from "@/features/ad-accounts/components/FreeTikTokAccountsManager.client";
 import { requirePermission } from "@/lib/auth/guards.server";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import { getActingAsCliente } from "@/lib/hecom/selected-cliente.server";
 import { isPaymentsSuperAdminEmail } from "@/lib/payments/funding-roles.server";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function CuentasLibresPage() {
   const session = await requirePermission("payments:read");
   const email = String(session.email ?? "");
-  if (!isHecomOtpStaffEmail(email) && !isPaymentsSuperAdminEmail(email)) {
+  if (!(await isStaffUser(email)) && !isPaymentsSuperAdminEmail(email)) {
     redirect(routes.overview);
   }
   if (await getActingAsCliente(session.id)) {

@@ -373,6 +373,25 @@ export async function ensureAccountProvisionedForUser(
       return { ready: true, organizationId: invite.organizationId };
     }
 
+    // Organización nueva solo para staff o clientes con ficha en Hecom. Sin esto,
+    // cualquier cuenta de Supabase (registro público, otra app del mismo proyecto)
+    // obtenía panel, org y cartera. Import dinámico: evita el ciclo con hecom-otp.
+    const { userMayUsePanel } = await import("@/lib/auth/panel-access.server");
+    const access = await userMayUsePanel({
+      userId: user.id,
+      email: user.email,
+      allowExistingMembership: false,
+    });
+    if (!access.ok) {
+      return {
+        ready: false,
+        error:
+          access.reason === "hecom_unavailable"
+            ? "No pudimos validar tu cuenta en este momento. Inténtalo en unos minutos."
+            : "Este correo no tiene acceso al panel de Ads Holistic. Crea tu cuenta o escríbenos a soporte.",
+      };
+    }
+
     const organization = await createOrganization(admin, user);
     if (!organization.id) {
       return {
