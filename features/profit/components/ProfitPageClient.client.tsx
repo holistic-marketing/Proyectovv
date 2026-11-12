@@ -887,6 +887,8 @@ export function ProfitPageClient({
   const [realProfitUrl, setRealProfitUrl] = useState("https://realprofitcod.com");
   /** Link firmado con el cliente: instalar = vincular. */
   const [installUrl, setInstallUrl] = useState<string | null>(null);
+  /** Botón «Conectar con Facebook» (OAuth) habilitado para este usuario. */
+  const [metaOAuth, setMetaOAuth] = useState(false);
 
   const live = useAdAccountLiveMetrics(true);
   const liveAccounts = useMemo(() => {
@@ -929,11 +931,13 @@ export function ProfitPageClient({
         connections?: RpConnections;
         installUrl?: string;
         realProfitUrl?: string;
+        metaOAuth?: boolean;
       };
       if (!res.ok || !json.ok) {
         throw new Error(json.error || t("loadError"));
       }
       setInstallUrl(json.installUrl ?? null);
+      setMetaOAuth(Boolean(json.metaOAuth));
       setAnalysis(json.analysis ?? null);
       setStaffOps(json.staffOps ?? null);
       setSnapshots(
@@ -1110,6 +1114,7 @@ export function ProfitPageClient({
         connections={connections}
         installUrl={installUrl}
         realProfitUrl={realProfitUrl}
+        metaOAuth={metaOAuth}
         onChanged={refresh}
         tiktokLinked={tiktokLinked}
         onTikTokLinkedChange={setTikTokLinkedPersist}

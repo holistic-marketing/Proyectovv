@@ -1478,7 +1478,11 @@
         "collected": "Cobrado",
         "rejected": "Rechazado",
         "returned": "Devuelto"
-      }
+      },
+      "metaOAuthButton": "Conectar con Facebook",
+      "metaOAuthOr": "o conéctala con el ID de tu cuenta:",
+      "metaPending": "Te enviamos una solicitud de acceso. Apruébala en Meta Business Suite y vuelve a tocar Conectar.",
+      "metaOpenRequests": "Abrir solicitudes en Meta →"
     },
     "pilot": {
       "title": "Piloto",

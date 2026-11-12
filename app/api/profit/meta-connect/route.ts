@@ -2,18 +2,16 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session.server";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getSelectedHecomCliente } from "@/lib/hecom/selected-cliente.server";
-import {
-  callRealProfitApi,
-  ensureRealProfitAdsStore,
-} from "@/lib/realprofit/install-link.server";
+import { callRealProfitApi } from "@/lib/realprofit/install-link.server";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 /**
- * Meta en modo socio: el cliente compartió su cuenta publicitaria con nuestro
- * Business; Real Profit la valida, la vincula y jala 30 días de gasto.
- * No exige Shopify: sin tienda, Real Profit usa una «solo ads» que se muda sola
- * a la tienda real cuando la instale.
+ * Meta en modo socio: el cliente pega el ID de su cuenta publicitaria.
+ * Real Profit la valida; si ya la compartió con nuestro Business se la asigna sola,
+ * y si no, le manda una solicitud de acceso para aprobar en Meta (202 pending).
+ * No exige Shopify: la tienda «solo ads» se crea solo cuando la cuenta ya se ve.
  * POST { adAccountId }
  */
 export async function POST(request: Request) {
@@ -30,16 +28,18 @@ export async function POST(request: Request) {
   }
   const body = (await request.json().catch(() => ({}))) as { adAccountId?: string };
 
-  const store = await ensureRealProfitAdsStore(selected.id, selected.name);
-  if ("error" in store) {
-    return NextResponse.json({ error: store.error }, { status: store.status });
+  const res = await callRealProfitApi<{
+    message?: string;
+    accountName?: string;
+    pending?: boolean;
+    requestsUrl?: string;
+  }>("/api/holistic/meta-partner", selected.id, {
+    adAccountId: body.adAccountId ?? "",
+    name: selected.name,
+  });
+  if (res.status === 202) {
+    return NextResponse.json({ pending: true, ...res.data }, { status: 202 });
   }
-
-  const res = await callRealProfitApi<{ message?: string; accountName?: string }>(
-    "/api/ads/meta/partner",
-    selected.id,
-    { storeId: store.storeId, adAccountId: body.adAccountId ?? "" },
-  );
   return NextResponse.json(
     res.ok ? { ok: true, ...res.data } : { error: res.data.error ?? "No se pudo conectar Meta." },
     { status: res.ok ? 200 : res.status },

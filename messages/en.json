@@ -1478,7 +1478,11 @@
         "collected": "Collected",
         "rejected": "Rejected",
         "returned": "Returned"
-      }
+      },
+      "metaOAuthButton": "Continue with Facebook",
+      "metaOAuthOr": "or connect it with your ad account ID:",
+      "metaPending": "We sent you an access request. Approve it in Meta Business Suite and tap Connect again.",
+      "metaOpenRequests": "Open requests in Meta →"
     },
     "pilot": {
       "title": "Pilot",

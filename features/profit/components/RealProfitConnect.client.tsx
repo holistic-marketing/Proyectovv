@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRef, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /** Business de Real Profit con el que el cliente comparte su cuenta de Meta (modo socio). */
 const META_PARTNER_BUSINESS_ID = "1400772061135321";
@@ -138,6 +139,7 @@ export function RealProfitConnect({
   connections,
   installUrl,
   realProfitUrl,
+  metaOAuth = false,
   onChanged,
   tiktokLinked,
   onTikTokLinkedChange,
@@ -145,6 +147,8 @@ export function RealProfitConnect({
   connections: RpConnections | null;
   installUrl: string | null;
   realProfitUrl: string;
+  /** Muestra «Conectar con Facebook» (OAuth). Público cuando Meta apruebe ads_read. */
+  metaOAuth?: boolean;
   onChanged: () => Promise<void> | void;
   /** El cliente tocó «Conectar TikTok Ads»: se muestran sus métricas. */
   tiktokLinked: boolean;
@@ -188,9 +192,33 @@ export function RealProfitConnect({
   // Meta
   const [adAccount, setAdAccount] = useState("");
   const [metaBusy, setMetaBusy] = useState(false);
-  const [metaMsg, setMetaMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Vuelta de «Conectar con Facebook»: /profit?meta=ok|error&meta_msg=...
+  const searchParams = useSearchParams();
+  const metaReturn = searchParams.get("meta");
+  const metaReturnMsg = searchParams.get("meta_msg");
+  const [metaMsg, setMetaMsg] = useState<{ ok: boolean; text: string } | null>(() =>
+    metaReturn
+      ? {
+          ok: metaReturn === "ok",
+          text: metaReturnMsg || (metaReturn === "ok" ? t("metaConnected") : t("genericError")),
+        }
+      : null,
+  );
   const [copied, setCopied] = useState(false);
-  const [metaEditing, setMetaEditing] = useState(false);
+  const [metaEditing, setMetaEditing] = useState(() => Boolean(metaReturn && metaReturn !== "ok"));
+  /** Le pedimos acceso a su cuenta: tiene que aprobarlo en Meta Business Suite. */
+  const [metaRequestsUrl, setMetaRequestsUrl] = useState<string | null>(null);
+
+  // Limpia ?meta= de la URL y, si conectó, recarga las conexiones.
+  useEffect(() => {
+    if (!metaReturn) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("meta");
+    url.searchParams.delete("meta_msg");
+    window.history.replaceState(null, "", url.toString());
+    if (metaReturn === "ok") void onChanged();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function connectMeta() {
     setMetaBusy(true);
@@ -201,7 +229,18 @@ export function RealProfitConnect({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adAccountId: adAccount }),
       });
-      const json = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+        pending?: boolean;
+        requestsUrl?: string;
+      };
+      if (res.status === 202 && json.pending) {
+        setMetaRequestsUrl(json.requestsUrl ?? "https://business.facebook.com/settings/requests");
+        setMetaMsg({ ok: true, text: json.message ?? t("metaPending") });
+        return;
+      }
+      setMetaRequestsUrl(null);
       setMetaMsg(res.ok ? { ok: true, text: json.message ?? t("metaConnected") } : { ok: false, text: json.error ?? t("genericError") });
       if (res.ok) {
         setMetaEditing(false);
@@ -383,6 +422,14 @@ export function RealProfitConnect({
             </>
           ) : (
             <>
+              {metaOAuth ? (
+                <>
+                  <a href="/api/profit/meta-oauth" className={`${primaryBtn} gap-2 self-start bg-[#1877f2]`}>
+                    {t("metaOAuthButton")}
+                  </a>
+                  <p className="mt-2 text-[12px] text-[#8a8177]">{t("metaOAuthOr")}</p>
+                </>
+              ) : null}
               <ol className="list-decimal space-y-1.5 pl-4">
                 <li>
                   {t("metaStep1")}
@@ -421,6 +468,16 @@ export function RealProfitConnect({
               </div>
               {metaMsg ? (
                 <p className={`mt-2 text-[12px] font-medium ${metaMsg.ok ? "text-emerald-700" : "text-[#b91c1c]"}`}>{metaMsg.text}</p>
+              ) : null}
+              {metaRequestsUrl ? (
+                <a
+                  href={metaRequestsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 self-start text-[12px] font-semibold text-[#c2410c] underline-offset-2 hover:underline"
+                >
+                  {t("metaOpenRequests")}
+                </a>
               ) : null}
             </>
           )}

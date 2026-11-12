@@ -34,6 +34,34 @@ export function buildRealProfitInstallUrl(hecomClienteId: string): string {
   return url.toString();
 }
 
+/**
+ * «Conectar con Facebook»: link a Real Profit firmado con el cliente, su nombre (para la
+ * tienda) y la URL de vuelta. Real Profit abre el diálogo de Facebook, guarda la cuenta
+ * publicitaria del cliente y redirige a returnUrl con ?meta=ok|error&meta_msg=.
+ */
+export function buildRealProfitMetaOAuthUrl(
+  hecomClienteId: string,
+  name: string,
+  returnUrl: string,
+): string | null {
+  const secret = process.env.HOLISTIC_LINK_SECRET?.trim();
+  if (!secret) return null;
+  const payload = Buffer.from(
+    JSON.stringify({
+      c: hecomClienteId,
+      p: "meta",
+      n: name.slice(0, 120),
+      r: returnUrl,
+      exp: Math.floor(Date.now() / 1000) + 30 * 60,
+    }),
+  ).toString("base64url");
+  const sig = createHmac("sha256", secret).update(payload).digest("base64url");
+  const base = realProfitBaseUrl().replace("://www.", "://");
+  const url = new URL("/api/holistic/meta-oauth", base);
+  url.searchParams.set("t", `${payload}.${sig}`);
+  return url.toString();
+}
+
 /** Token corto para llamar a la API de Real Profit en nombre del cliente (p:'api'). */
 function signApiToken(hecomClienteId: string): string | null {
   const secret = process.env.HOLISTIC_LINK_SECRET?.trim();
