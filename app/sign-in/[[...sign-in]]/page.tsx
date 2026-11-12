@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { ClerkPasswordlessSignIn } from "@/features/auth/components/ClerkPasswordlessSignIn.client";
 import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
@@ -58,16 +58,13 @@ export default async function ClerkSignInPage({
     const { userId } = await auth();
     if (userId) redirect(clerkRoutes.complete);
   }
-  // Sin withSignUp: las cuentas nuevas pasan por /sign-up, que pide nombre y celular
-  // (el puente los necesita para crear la ficha en Hecom).
+  // Formulario propio: el código de Clerk solo se envía a correos ya registrados
+  // (/api/auth/clerk/precheck). Las cuentas nuevas pasan por /sign-up (nombre y celular).
+  // Misma tarjeta blanca que /sign-up sobre el fondo crema del shell.
   const signIn = (
-    <SignIn
-      routing="path"
-      path={clerkRoutes.signIn}
-      signUpUrl={clerkRoutes.signUp}
-      forceRedirectUrl={clerkRoutes.complete}
-      fallbackRedirectUrl={clerkRoutes.complete}
-    />
+    <div className="relative rounded-[14px] border border-[#e6e3dd] bg-white px-6 py-8 sm:px-8">
+      <ClerkPasswordlessSignIn />
+    </div>
   );
 
   return (

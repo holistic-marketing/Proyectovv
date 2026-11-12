@@ -15,7 +15,10 @@ export function ClerkLoadFallback({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const id = window.setTimeout(() => {
-      const rendered = document.querySelector(".cl-rootBox input, .cl-rootBox button, .cl-card");
+      // `[data-clerk-ready]`: formularios propios (ClerkPasswordlessSignIn) ya con clerk-js cargado.
+      const rendered = document.querySelector(
+        ".cl-rootBox input, .cl-rootBox button, .cl-card, [data-clerk-ready]",
+      );
       if (!rendered) setStuck(true);
     }, WAIT_MS);
     return () => window.clearTimeout(id);
