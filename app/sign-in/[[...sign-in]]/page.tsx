@@ -58,16 +58,15 @@ export default async function ClerkSignInPage({
     const { userId } = await auth();
     if (userId) redirect(clerkRoutes.complete);
   }
+  // Sin withSignUp: las cuentas nuevas pasan por /sign-up, que pide nombre y celular
+  // (el puente los necesita para crear la ficha en Hecom).
   const signIn = (
     <SignIn
-      withSignUp
       routing="path"
       path={clerkRoutes.signIn}
       signUpUrl={clerkRoutes.signUp}
       forceRedirectUrl={clerkRoutes.complete}
       fallbackRedirectUrl={clerkRoutes.complete}
-      signUpForceRedirectUrl={clerkRoutes.complete}
-      signUpFallbackRedirectUrl={clerkRoutes.complete}
     />
   );
 

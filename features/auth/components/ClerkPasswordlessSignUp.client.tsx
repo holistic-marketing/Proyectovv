@@ -2,28 +2,60 @@
 
 import { useState, type FormEvent } from "react";
 import { useSignUp } from "@clerk/nextjs";
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
+import { useNow } from "@/hooks/useNow";
 import { clerkRoutes } from "@/lib/auth/clerk";
+import {
+  CLERK_SIGN_UP_FALLBACK_ERROR,
+  clerkSignUpErrorMessage,
+} from "@/lib/auth/clerk-errors";
 import {
   getRegisterCountry,
   isValidPhone,
 } from "@/lib/auth/register-countries.shared";
-import { AuthFormHeading, AuthNotice, AuthSubmitButton } from "./AuthFormUi";
+import {
+  AuthCodeInput,
+  AuthFormHeading,
+  AuthNotice,
+  AuthSubmitButton,
+} from "./AuthFormUi";
 import styles from "./auth.module.css";
 
 const COUNTRY = getRegisterCountry("PE");
+const CODE_LENGTH = 6;
+const RESEND_COOLDOWN_MS = 30_000;
 
-type Step = "form" | "check-email" | "other-device" | "expired";
+type Step = "form" | "code";
 
-type FieldErrors = Partial<Record<"fullName" | "email" | "phone", string>>;
+type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "code", string>>;
 
-function errorText(error: { longMessage?: string; message: string } | null | undefined): string {
-  if (!error) return "No pudimos completar el registro. Inténtalo de nuevo.";
-  return error.longMessage || error.message;
+type SignUpError = {
+  message: string;
+  /** Sugerir /sign-in (el correo ya tiene cuenta en Clerk). */
+  existingAccount: boolean;
+};
+
+/** Códigos de la API de Clerk dentro del error (nunca se muestra su texto en inglés). */
+function clerkErrorCodes(error: unknown): string[] {
+  if (!error) return [];
+  if (isClerkAPIResponseError(error)) {
+    return [...error.errors.map((item) => item.code), error.code].filter(Boolean);
+  }
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" && code ? [code] : [];
+}
+
+function toSignUpError(error: unknown): SignUpError {
+  const codes = clerkErrorCodes(error);
+  return {
+    message: codes.length > 0 ? clerkSignUpErrorMessage(codes) : CLERK_SIGN_UP_FALLBACK_ERROR,
+    existingAccount: codes.includes("form_identifier_exists"),
+  };
 }
 
 function validate(fullName: string, email: string, phone: string): FieldErrors {
   const errors: FieldErrors = {};
-  if (fullName.replace(/\s+/g, " ").trim().length < 2) {
+  if (fullName.length < 2) {
     errors.fullName = "Escribe tu nombre completo.";
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -36,29 +68,48 @@ function validate(fullName: string, email: string, phone: string): FieldErrors {
 }
 
 /**
- * Registro sin contraseña: nombre, correo y celular → enlace mágico de Clerk.
- * El servidor (/auth/clerk/complete) valida de nuevo y crea la ficha en Hecom.
+ * Registro sin contraseña: nombre, correo y celular → código de 6 dígitos al correo (email_code),
+ * el mismo método que el inicio de sesión. El servidor (/auth/clerk/complete) valida de nuevo
+ * y crea la ficha en Hecom con el celular de unsafeMetadata.
  */
 export function ClerkPasswordlessSignUp() {
   const { signUp, errors, fetchStatus } = useSignUp();
+  const now = useNow(1000);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
   const [step, setStep] = useState<Step>("form");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<SignUpError | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
 
   const busy = submitting || fetchStatus === "fetching";
-  const emailError = fieldErrors.email ?? errors.fields.emailAddress?.longMessage ?? errors.fields.emailAddress?.message;
+  const cleanEmail = email.trim().toLowerCase();
+  const clerkEmailCode = errors.fields.emailAddress?.code;
+  const emailError =
+    fieldErrors.email ?? (clerkEmailCode ? clerkSignUpErrorMessage([clerkEmailCode]) : undefined);
+  const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
+
+  async function sendCode(): Promise<boolean> {
+    const sent = await signUp.verifications.sendEmailCode();
+    if (sent.error) {
+      setFormError(toSignUpError(sent.error));
+      return false;
+    }
+    setResendAvailableAt(Date.now() + RESEND_COOLDOWN_MS);
+    return true;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
     setFormError(null);
+    setNotice(null);
 
     const cleanName = fullName.replace(/\s+/g, " ").trim();
-    const cleanEmail = email.trim().toLowerCase();
     const nextErrors = validate(cleanName, cleanEmail, phone);
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -75,42 +126,41 @@ export function ClerkPasswordlessSignUp() {
         },
       });
       if (created.error) {
-        setFormError(errorText(created.error));
+        setFormError(toSignUpError(created.error));
         return;
       }
-
-      const sent = await signUp.verifications.sendEmailLink({
-        verificationUrl: `${window.location.origin}${clerkRoutes.verify}`,
-      });
-      if (sent.error) {
-        setFormError(errorText(sent.error));
-        return;
+      if (await sendCode()) {
+        setCode("");
+        setStep("code");
       }
-      setStep("check-email");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
-      // Espera a que el usuario abra el enlace (en esta u otra pestaña/dispositivo).
-      const waited = await signUp.verifications.waitForEmailLinkVerification();
-      if (waited.error) {
-        setFormError(errorText(waited.error));
-        setStep("form");
-        return;
-      }
+  async function handleVerify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setFormError(null);
+    setNotice(null);
+    if (code.length !== CODE_LENGTH) {
+      setFieldErrors({ code: `Escribe los ${CODE_LENGTH} dígitos del código.` });
+      return;
+    }
+    setFieldErrors({});
 
-      const link = signUp.verifications.emailLinkVerification;
-      if (link?.status === "expired") {
-        setStep("expired");
+    setSubmitting(true);
+    try {
+      const verified = await signUp.verifications.verifyEmailCode({ code });
+      if (verified.error) {
+        setFormError(toSignUpError(verified.error));
         return;
       }
       if (signUp.status !== "complete") {
-        if (link?.status === "client_mismatch" || link?.verifiedFromTheSameClient === false) {
-          setStep("other-device");
-          return;
-        }
-        setFormError("Tu correo quedó verificado, pero falta un paso. Inicia sesión para continuar.");
-        setStep("form");
+        // Faltaría un dato que pide la instancia de Clerk (missing_requirements).
+        setFormError({ message: CLERK_SIGN_UP_FALLBACK_ERROR, existingAccount: false });
         return;
       }
-
       const finalized = await signUp.finalize({
         navigate: ({ decorateUrl }) => {
           // Navegación completa: /auth/clerk/complete es un route handler que fija cookies.
@@ -118,68 +168,112 @@ export function ClerkPasswordlessSignUp() {
         },
       });
       if (finalized.error) {
-        setFormError(errorText(finalized.error));
-        setStep("form");
+        setFormError(toSignUpError(finalized.error));
       }
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function restart() {
-    await signUp.reset();
+  async function handleResend() {
+    if (busy || resendSeconds > 0) return;
     setFormError(null);
+    setNotice(null);
+    setSubmitting(true);
+    try {
+      if (await sendCode()) {
+        setCode("");
+        setNotice(`Te enviamos un código nuevo a ${cleanEmail}.`);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleChangeEmail() {
+    await signUp.reset();
+    setCode("");
+    setFormError(null);
+    setNotice(null);
+    setFieldErrors({});
+    setResendAvailableAt(0);
     setStep("form");
   }
 
-  if (step === "check-email") {
+  const errorNotice = formError ? (
+    <AuthNotice tone="error">
+      {formError.message}
+      {formError.existingAccount ? (
+        <>
+          {" "}
+          <a href={clerkRoutes.signIn}>Ir a iniciar sesión</a>
+        </>
+      ) : null}
+    </AuthNotice>
+  ) : null;
+
+  if (step === "code") {
     return (
-      <div className={styles.form}>
+      <form onSubmit={handleVerify} className={styles.form} aria-busy={busy} noValidate>
         <AuthFormHeading title="Revisa tu correo">
-          Te enviamos un enlace a <strong>{email.trim().toLowerCase()}</strong>. Ábrelo para
-          activar tu cuenta; esta pantalla continúa sola.
+          Escribe el código de {CODE_LENGTH} dígitos que enviamos a <strong>{cleanEmail}</strong>.
         </AuthFormHeading>
-        <AuthNotice tone="info">Si no lo ves, revisa spam o promociones.</AuthNotice>
-        <button type="button" className={styles.secondaryButton} onClick={() => void restart()}>
-          Usar otro correo
-        </button>
-      </div>
-    );
-  }
 
-  if (step === "other-device") {
-    return (
-      <div className={styles.form}>
-        <AuthFormHeading title="Correo verificado en otro dispositivo">
-          Tu cuenta quedó lista. Inicia sesión aquí para continuar.
-        </AuthFormHeading>
-        <a href={clerkRoutes.signIn} className={styles.secondaryButton}>
-          Iniciar sesión
-        </a>
-      </div>
-    );
-  }
+        {errorNotice}
+        {notice ? <AuthNotice tone="success">{notice}</AuthNotice> : null}
 
-  if (step === "expired") {
-    return (
-      <div className={styles.form}>
-        <AuthFormHeading title="El enlace venció">
-          Pide uno nuevo para terminar tu registro.
-        </AuthFormHeading>
-        <button type="button" className={styles.secondaryButton} onClick={() => void restart()}>
-          Volver a intentar
+        <div className={styles.fieldGroup}>
+          <label htmlFor="signup-code" className={styles.fieldLabel}>
+            Código de verificación
+          </label>
+          <AuthCodeInput
+            id="signup-code"
+            value={code}
+            onChange={setCode}
+            disabled={busy}
+            invalid={Boolean(fieldErrors.code)}
+            describedBy={fieldErrors.code ? "signup-code-error" : undefined}
+          />
+          {fieldErrors.code ? (
+            <p id="signup-code-error" className={styles.helpText} role="alert">
+              {fieldErrors.code}
+            </p>
+          ) : (
+            <p className={styles.helpText}>Si no lo ves, revisa spam o promociones.</p>
+          )}
+        </div>
+
+        <AuthSubmitButton loading={busy} loadingLabel="Verificando…" disabled={code.length !== CODE_LENGTH}>
+          Verificar y entrar
+        </AuthSubmitButton>
+
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          onClick={() => void handleResend()}
+          disabled={busy || resendSeconds > 0}
+        >
+          {resendSeconds > 0 ? `Reenviar código en ${resendSeconds} s` : "Reenviar código"}
         </button>
-      </div>
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          onClick={() => void handleChangeEmail()}
+          disabled={busy}
+        >
+          Cambiar correo
+        </button>
+      </form>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className={styles.form} aria-busy={busy} noValidate>
       <AuthFormHeading title="Crea tu cuenta">
-        Sin contraseña: te enviamos un enlace a tu correo.
+        Sin contraseña: te enviamos un código a tu correo.
       </AuthFormHeading>
 
-      {formError ? <AuthNotice tone="error">{formError}</AuthNotice> : null}
+      {errorNotice}
 
       <div className={styles.fieldGroup}>
         <label htmlFor="signup-full-name" className={styles.fieldLabel}>
@@ -254,7 +348,7 @@ export function ClerkPasswordlessSignUp() {
       {/* Bot protection de Clerk (Turnstile) se monta aquí. */}
       <div id="clerk-captcha" />
 
-      <AuthSubmitButton loading={busy} loadingLabel="Enviando enlace…">
+      <AuthSubmitButton loading={busy} loadingLabel="Enviando código…">
         Crear cuenta
       </AuthSubmitButton>
     </form>

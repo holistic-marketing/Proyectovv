@@ -8,6 +8,12 @@ export const holisticClerkLocalizationEs = {
   formFieldInputPlaceholder__signUpPassword: "Crea una contraseña",
   formFieldInputPlaceholder__emailAddress: "tu@gmail.com",
   formButtonPrimary: "Continuar",
+  unstable__errors: {
+    ...esES.unstable__errors,
+    // /sign-in ya no crea cuentas: los clientes nuevos (o de Hecom sin cuenta aún) van a /sign-up.
+    form_identifier_not_found:
+      "Aún no tienes cuenta con este correo. Créala en «Crear cuenta» usando el mismo correo.",
+  },
   signIn: {
     ...esES.signIn,
     start: {
