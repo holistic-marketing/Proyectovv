@@ -24,7 +24,6 @@ export function clerkRuntimeReady() {
 
 /**
  * Solo se prende con AUTH_CLERK_LOGIN=true explícito; sin eso (o sin claves) → OTP en /login.
- * Sin claves → OTP en /login. Con claves, AUTH_CLERK_LOGIN=false lo apaga.
  */
 export function clerkLoginEnabled() {
   if (!clerkRuntimeReady()) return false;
