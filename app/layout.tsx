@@ -126,7 +126,7 @@ export default async function RootLayout({
         {clerkEnabled && publishableKey ? (
           <ClerkProvider
             publishableKey={publishableKey}
-            localization={getClerkLocalization(locale)}
+            localization={getClerkLocalization()}
             appearance={holisticClerkAppearance}
             signInUrl={clerkRoutes.signIn}
             signUpUrl={clerkRoutes.signUp}

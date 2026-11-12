@@ -20,6 +20,7 @@ import {
   normalizeHecomOtpEmail,
 } from "@/lib/auth/hecom-otp-email";
 import { resolveSafeNextPath } from "@/lib/auth/safe-next-path";
+import { spanishValidityFormProps } from "@/lib/forms/spanish-validity.client";
 
 async function assertAdminAccess(): Promise<boolean> {
   const response = await fetch(routes.api.auth.adminAccess, { cache: "no-store" });
@@ -276,7 +277,7 @@ export function VerifyOtpForm({ locale = "es" }: { locale?: LandingLocale }) {
         </strong>
       </AuthFormHeading>
 
-      <form onSubmit={handleVerify} className={styles.form}>
+      <form {...spanishValidityFormProps(locale)} onSubmit={handleVerify} className={styles.form}>
         <div className={styles.fieldGroup}>
           <label htmlFor="otp" className={styles.fieldLabel}>
             {t.codeLabel}

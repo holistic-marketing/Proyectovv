@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { mapAuthErrorMessage } from "@/lib/auth/error-messages.client";
 import { resolveSafeNextPath } from "@/lib/auth/safe-next-path";
 import { EcomdyLogo } from "@/components/brand/EcomdyLogo";
+import { spanishValidityFormProps } from "@/lib/forms/spanish-validity.client";
 
 function PasswordToggle({
   visible,
@@ -130,7 +131,7 @@ export function AdminLoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form {...spanishValidityFormProps()} onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
             htmlFor="admin-email"

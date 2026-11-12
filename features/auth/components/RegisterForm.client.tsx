@@ -18,6 +18,7 @@ import {
   type RegisterCountryRule,
 } from "@/lib/auth/register-countries.shared";
 import { CountryFlag } from "./CountryFlag";
+import { spanishValidityFormProps } from "@/lib/forms/spanish-validity.client";
 
 interface RegisterFormValues {
   firstName: string;
@@ -257,7 +258,7 @@ export function RegisterForm({ locale = "es" }: { locale?: LandingLocale }) {
     <div className="w-full">
       <AuthFormHeading title={t.title}>{t.subtitle}</AuthFormHeading>
 
-      <form onSubmit={handleSubmit} className={styles.form} aria-busy={loading}>
+      <form {...spanishValidityFormProps(lang)} onSubmit={handleSubmit} className={styles.form} aria-busy={loading}>
         {fromLogin && (
           <AuthNotice tone="info">{t.notRegisteredNotice}</AuthNotice>
         )}

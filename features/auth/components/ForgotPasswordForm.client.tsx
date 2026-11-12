@@ -14,6 +14,7 @@ import {
   AuthSubmitButton,
 } from "./AuthFormUi";
 import styles from "./auth.module.css";
+import { spanishValidityFormProps } from "@/lib/forms/spanish-validity.client";
 
 type RecoveryStep = "request" | "verify" | "reset" | "done";
 
@@ -231,7 +232,7 @@ export function ForgotPasswordForm() {
       )}
 
       {step === "request" && (
-        <form onSubmit={handleRequest} className={styles.form}>
+        <form {...spanishValidityFormProps()} onSubmit={handleRequest} className={styles.form}>
           <div className={styles.fieldGroup}>
             <label htmlFor="recovery-email" className={styles.fieldLabel}>Correo electrónico</label>
             <input
@@ -255,7 +256,7 @@ export function ForgotPasswordForm() {
       )}
 
       {step === "verify" && (
-        <form onSubmit={handleVerify} className={styles.form}>
+        <form {...spanishValidityFormProps()} onSubmit={handleVerify} className={styles.form}>
           <div className={styles.fieldGroup}>
             <label htmlFor="recovery-otp" className={styles.fieldLabel}>Código de 6 dígitos</label>
             <AuthCodeInput
@@ -278,7 +279,7 @@ export function ForgotPasswordForm() {
       )}
 
       {step === "reset" && (
-        <form onSubmit={handleResetPassword} className={styles.form}>
+        <form {...spanishValidityFormProps()} onSubmit={handleResetPassword} className={styles.form}>
           <div className={styles.fieldGroup}>
             <label htmlFor="new-password" className={styles.fieldLabel}>Nueva contraseña</label>
             <div className="relative">

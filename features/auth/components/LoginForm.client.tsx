@@ -11,6 +11,7 @@ import { AuthFormHeading, AuthNotice, AuthSubmitButton } from "./AuthFormUi";
 import styles from "./auth.module.css";
 import { getAuthCopy } from "../i18n/auth-copy";
 import type { LandingLocale } from "@/features/landing/i18n/landing-locale";
+import { spanishValidityFormProps } from "@/lib/forms/spanish-validity.client";
 
 function PasswordToggle({
   visible,
@@ -250,6 +251,7 @@ export function LoginForm({ hecomOtpEnabled = false, locale = "es" }: LoginFormP
       </div>
 
       <form
+        {...spanishValidityFormProps(locale)}
         onSubmit={otpMode ? handleOtpSubmit : handlePasswordSubmit}
         className={styles.form}
         aria-busy={loading}
