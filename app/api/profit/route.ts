@@ -69,6 +69,9 @@ export async function GET(request: Request) {
       installUrl: buildRealProfitInstallUrl(selected.id),
       // «Conectar con Facebook»: público cuando Meta apruebe ads_read (App Review);
       // mientras tanto solo gerencia (usuarios con rol en la app de Meta) lo prueba.
+      // Business (Meta) de Real Profit: mismo valor que META_BUSINESS_ID en realprofitcod.
+      metaBusinessId:
+        process.env.META_PARTNER_BUSINESS_ID?.trim() || "1400772061135321",
       metaOAuth:
         process.env.META_OAUTH_PUBLIC === "true" ||
         rawFunding.isStaff ||

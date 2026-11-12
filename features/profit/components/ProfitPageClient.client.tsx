@@ -889,6 +889,7 @@ export function ProfitPageClient({
   const [installUrl, setInstallUrl] = useState<string | null>(null);
   /** Botón «Conectar con Facebook» (OAuth) habilitado para este usuario. */
   const [metaOAuth, setMetaOAuth] = useState(false);
+  const [metaBusinessId, setMetaBusinessId] = useState("");
 
   const live = useAdAccountLiveMetrics(true);
   const liveAccounts = useMemo(() => {
@@ -932,12 +933,14 @@ export function ProfitPageClient({
         installUrl?: string;
         realProfitUrl?: string;
         metaOAuth?: boolean;
+        metaBusinessId?: string;
       };
       if (!res.ok || !json.ok) {
         throw new Error(json.error || t("loadError"));
       }
       setInstallUrl(json.installUrl ?? null);
       setMetaOAuth(Boolean(json.metaOAuth));
+      setMetaBusinessId(json.metaBusinessId ?? "");
       setAnalysis(json.analysis ?? null);
       setStaffOps(json.staffOps ?? null);
       setSnapshots(
@@ -1115,6 +1118,7 @@ export function ProfitPageClient({
         installUrl={installUrl}
         realProfitUrl={realProfitUrl}
         metaOAuth={metaOAuth}
+        metaBusinessId={metaBusinessId}
         onChanged={refresh}
         tiktokLinked={tiktokLinked}
         onTikTokLinkedChange={setTikTokLinkedPersist}

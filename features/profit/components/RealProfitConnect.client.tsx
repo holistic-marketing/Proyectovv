@@ -4,8 +4,6 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/** Business de Real Profit con el que el cliente comparte su cuenta de Meta (modo socio). */
-const META_PARTNER_BUSINESS_ID = "1400772061135321";
 const COURIER_TEMPLATE =
   "pedido;estado;monto_cobrado;costo_envio;courier\n#1001;entregado;89.90;12;Olva\n#1002;rechazado;;15;Shalom\n#1003;en ruta;;;Urbaner\n";
 
@@ -140,6 +138,7 @@ export function RealProfitConnect({
   installUrl,
   realProfitUrl,
   metaOAuth = false,
+  metaBusinessId,
   onChanged,
   tiktokLinked,
   onTikTokLinkedChange,
@@ -149,6 +148,8 @@ export function RealProfitConnect({
   realProfitUrl: string;
   /** Muestra «Conectar con Facebook» (OAuth). Público cuando Meta apruebe ads_read. */
   metaOAuth?: boolean;
+  /** Business de Real Profit con el que el cliente comparte su cuenta de Meta (modo socio). */
+  metaBusinessId: string;
   onChanged: () => Promise<void> | void;
   /** El cliente tocó «Conectar TikTok Ads»: se muestran sus métricas. */
   tiktokLinked: boolean;
@@ -435,12 +436,12 @@ export function RealProfitConnect({
                   {t("metaStep1")}
                   <span className="mt-1.5 flex items-center gap-2">
                     <code className="rounded-lg bg-[#faf8f5] px-2 py-1 text-[12.5px] font-bold tabular-nums text-[#1c1917] ring-1 ring-[#ece7e0]">
-                      {META_PARTNER_BUSINESS_ID}
+                      {metaBusinessId}
                     </code>
                     <button
                       type="button"
                       onClick={() => {
-                        void navigator.clipboard?.writeText(META_PARTNER_BUSINESS_ID);
+                        void navigator.clipboard?.writeText(metaBusinessId);
                         setCopied(true);
                         window.setTimeout(() => setCopied(false), 1800);
                       }}
