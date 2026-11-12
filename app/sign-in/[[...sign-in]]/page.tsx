@@ -9,6 +9,7 @@ import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client
 import { ClerkAuthShell } from "@/features/auth/components/ClerkAuthShell";
 import { ClerkLoadFallback } from "@/features/auth/components/ClerkLoadFallback.client";
 import { ClerkRejectedGate } from "@/features/auth/components/ClerkRejectedGate.client";
+import { ClerkSignInPrecheck } from "@/features/auth/components/ClerkSignInPrecheck.client";
 import {
   clerkConfigured,
   clerkLoginEnabled,
@@ -60,14 +61,18 @@ export default async function ClerkSignInPage({
   }
   // Sin withSignUp: las cuentas nuevas pasan por /sign-up, que pide nombre y celular
   // (el puente los necesita para crear la ficha en Hecom).
+  // Precheck antes de que Clerk cree el sign-in: alta a tiempo de usuarios registrados;
+  // correos desconocidos reciben form_identifier_not_found sin código.
   const signIn = (
-    <SignIn
-      routing="path"
-      path={clerkRoutes.signIn}
-      signUpUrl={clerkRoutes.signUp}
-      forceRedirectUrl={clerkRoutes.complete}
-      fallbackRedirectUrl={clerkRoutes.complete}
-    />
+    <ClerkSignInPrecheck>
+      <SignIn
+        routing="path"
+        path={clerkRoutes.signIn}
+        signUpUrl={clerkRoutes.signUp}
+        forceRedirectUrl={clerkRoutes.complete}
+        fallbackRedirectUrl={clerkRoutes.complete}
+      />
+    </ClerkSignInPrecheck>
   );
 
   return (
