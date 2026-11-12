@@ -84,6 +84,17 @@ export function ClerkAuthShell({ children }: { children: ReactNode }) {
 
       <section className={styles.formSide}>
         <div className={styles.formInner}>
+          <Link href={routes.home} aria-label={`${siteConfig.name} — inicio`} className={styles.formLogo}>
+            <Image
+              src="/brand/holistic-marketing-logo.png"
+              alt={siteConfig.name}
+              width={506}
+              height={183}
+              sizes="168px"
+              className={styles.formLogoImg}
+              priority
+            />
+          </Link>
           <div className={styles.mobileIntro}>
             <p className={styles.mobileEyebrow}>Acceso Ads Holistic</p>
             <p className={styles.mobileLead}>

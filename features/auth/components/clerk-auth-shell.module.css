@@ -263,6 +263,24 @@
   max-width: 420px;
 }
 
+/* Logo arriba de la tarjeta (en celular ya está en la barra oscura). */
+.formLogo {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .formLogo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+}
+
+.formLogoImg {
+  width: 168px;
+  height: auto;
+}
+
 .mobileIntro {
   margin-bottom: 1.5rem;
 }
