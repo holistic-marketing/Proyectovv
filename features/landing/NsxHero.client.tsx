@@ -108,10 +108,10 @@ export function NsxHero({
 
             <div className="nsx-hero-cta">
               <NsxBtnPrimary
-                href={routes.shop}
+                href={routes.register}
                 className="nsx-hero-cta-btn justify-center"
               >
-                {nav.buy}
+                {nav.register}
               </NsxBtnPrimary>
               <NsxBtnSecondary
                 href={routes.login}

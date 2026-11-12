@@ -36,8 +36,6 @@ export const routes = {
   assistant: "/asistente",
   education: "/education",
   support: "/support",
-  shop: "/comprar",
-  cart: "/carrito",
   terms: "/terminos",
   returns: "/devoluciones",
   complaints: "/libro-de-reclamaciones",

@@ -18,7 +18,6 @@ const PRIVATE_PATHS = [
   "/account-setup",
   "/contrato",
   "/pago",
-  "/carrito",
   "/overview",
   "/clientes",
   "/ad-accounts",

@@ -21,7 +21,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
       },
     },
-    { url: absoluteUrl(routes.shop), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: absoluteUrl(routes.register), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: absoluteUrl(routes.login), lastModified: now, changeFrequency: "yearly", priority: 0.5 },
     { url: absoluteUrl(routes.terms), lastModified: now, changeFrequency: "yearly", priority: 0.3 },

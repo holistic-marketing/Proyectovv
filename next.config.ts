@@ -89,6 +89,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // La tienda (comprar / carrito) se retiró: los links viejos van al inicio.
+    return [
+      { source: "/comprar", destination: "/", permanent: false },
+      { source: "/carrito", destination: "/", permanent: false },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

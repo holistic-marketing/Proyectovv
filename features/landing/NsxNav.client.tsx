@@ -7,7 +7,6 @@ import { siteConfig } from "@/config/site";
 import { HolisticLogo } from "@/components/brand/EcomdyLogo";
 import { cn } from "@/lib/cn";
 import { NsxBtnPrimary, NsxBtnSecondary } from "./NsxButtons";
-import { ShopCartLink } from "@/features/shop/ShopCartLink.client";
 import type { LandingCopy } from "./i18n/landing-copy";
 import type { LandingLocale } from "./i18n/landing-locale";
 import { LandingLocaleSwitcher } from "./i18n/LandingLocaleSwitcher.client";
@@ -86,9 +85,8 @@ export function NsxNav({
           <LandingLocaleSwitcher locale={locale} label={copy.language} />
 
           <div className="hidden items-center gap-1 xl:flex">
-            <ShopCartLink />
             <NsxBtnSecondary href={routes.login}>{copy.login}</NsxBtnSecondary>
-            <NsxBtnPrimary href={routes.shop}>{copy.buy}</NsxBtnPrimary>
+            <NsxBtnPrimary href={routes.register}>{copy.register}</NsxBtnPrimary>
           </div>
 
           <button
@@ -125,14 +123,11 @@ export function NsxNav({
             ))}
           </ul>
           <div className="mt-2 space-y-2 border-t border-[var(--nsx-stroke)] pt-3">
-            <div className="flex items-center px-1">
-              <ShopCartLink />
-            </div>
             <NsxBtnPrimary
-              href={routes.shop}
+              href={routes.register}
               className="w-full justify-center"
             >
-              {copy.buy}
+              {copy.register}
             </NsxBtnPrimary>
             <NsxBtnSecondary
               href={routes.login}

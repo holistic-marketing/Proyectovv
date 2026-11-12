@@ -3,11 +3,8 @@ import type { ReactNode } from "react";
 import { HolisticLogo } from "@/components/brand/EcomdyLogo";
 import { routes } from "@/config/routes";
 import { legalCompany } from "@/lib/legal/company";
-import { ShopCartLink } from "@/features/shop/ShopCartLink.client";
 
 const LINKS = [
-  { href: routes.shop, label: "Comprar" },
-  { href: routes.cart, label: "Carrito" },
   { href: routes.terms, label: "Términos y condiciones" },
   { href: routes.returns, label: "Cambios y devoluciones" },
   { href: routes.complaints, label: "Libro de reclamaciones" },
@@ -27,15 +24,12 @@ export function PublicLegalShell({
           <Link href={routes.home} aria-label={legalCompany.tradeName}>
             <HolisticLogo size={140} className="h-8 w-auto" />
           </Link>
-          <div className="flex items-center gap-2">
-            <ShopCartLink />
-            <Link
-              href={routes.shop}
-              className="inline-flex h-9 items-center rounded-full bg-[#ff781f] px-3 text-[13px] font-bold text-white"
-            >
-              Comprar
-            </Link>
-          </div>
+          <Link
+            href={routes.login}
+            className="inline-flex h-9 items-center rounded-full bg-[#ff781f] px-3 text-[13px] font-bold text-white"
+          >
+            Entrar
+          </Link>
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl px-4 py-8">

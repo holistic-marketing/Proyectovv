@@ -40,8 +40,6 @@ export function NsxFooter({ copy }: { copy: LandingCopy["footer"] }) {
         </div>
         <nav className="nsx-footer-nav" aria-label={copy.ariaNav}>
           <a href="#soluciones">{copy.solutions}</a>
-          <Link href={routes.shop}>{copy.buy}</Link>
-          <Link href={routes.cart}>{copy.cart}</Link>
           <Link href={routes.terms}>{copy.terms}</Link>
           <Link href={routes.returns}>{copy.returns}</Link>
           <Link href={routes.complaints}>{copy.complaints}</Link>

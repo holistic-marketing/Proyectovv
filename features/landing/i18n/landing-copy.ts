@@ -28,7 +28,7 @@ export type LandingCopy = {
     about: string;
     faq: string;
     login: string;
-    buy: string;
+    register: string;
     openMenu: string;
     closeMenu: string;
     language: string;
@@ -131,8 +131,6 @@ export type LandingCopy = {
     tagline: string;
     ariaNav: string;
     solutions: string;
-    buy: string;
-    cart: string;
     terms: string;
     returns: string;
     complaints: string;
@@ -156,7 +154,7 @@ const es: LandingCopy = {
     about: "Nosotros",
     faq: "Preguntas",
     login: "Iniciar sesión",
-    buy: "Comprar",
+    register: "Registrarme",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",
     language: "Idioma",
@@ -312,8 +310,8 @@ const es: LandingCopy = {
         body: "Invita a otros anunciantes y gana USD 10 de descuento por cada uno que se vuelva cliente.",
       },
       {
-        title: "Paquetes de recarga",
-        body: "Compra saldo publicitario en paquetes de USD 100, 300 o 500 y asígnalo a tus cuentas.",
+        title: "Paga como prefieras",
+        body: "Recarga tu cartera con Yape, Plin, bancos o USDT y asígnala a tus cuentas.",
       },
       {
         title: "Roles claros",
@@ -406,8 +404,6 @@ const es: LandingCopy = {
     tagline: "Cartera, TikTok Ads y operación Hecom Club",
     ariaNav: "Pie de página",
     solutions: "Soluciones",
-    buy: "Comprar",
-    cart: "Carrito",
     terms: "Términos y condiciones",
     returns: "Cambios y devoluciones",
     complaints: "Libro de reclamaciones",
@@ -431,7 +427,7 @@ const en: LandingCopy = {
     about: "About us",
     faq: "FAQ",
     login: "Log in",
-    buy: "Buy",
+    register: "Sign up",
     openMenu: "Open menu",
     closeMenu: "Close menu",
     language: "Language",
@@ -587,8 +583,8 @@ const en: LandingCopy = {
         body: "Invite other advertisers and get a USD 10 discount for each one who becomes a client.",
       },
       {
-        title: "Top-up packs",
-        body: "Buy ad balance in USD 100, 300 or 500 packs and assign it to your accounts.",
+        title: "Pay your way",
+        body: "Top up your wallet with Yape, Plin, bank transfer or USDT and assign it to your accounts.",
       },
       {
         title: "Clear roles",
@@ -681,8 +677,6 @@ const en: LandingCopy = {
     tagline: "Wallet, TikTok Ads and Hecom Club operations",
     ariaNav: "Footer",
     solutions: "Solutions",
-    buy: "Buy",
-    cart: "Cart",
     terms: "Terms and conditions",
     returns: "Exchanges and returns",
     complaints: "Complaints book",
@@ -706,7 +700,7 @@ const zh: LandingCopy = {
     about: "关于我们",
     faq: "常见问题",
     login: "登录",
-    buy: "购买",
+    register: "注册",
     openMenu: "打开菜单",
     closeMenu: "关闭菜单",
     language: "语言",
@@ -862,8 +856,8 @@ const zh: LandingCopy = {
         body: "邀请其他广告主，每成功一位成为客户，你即可获得 USD 10 折扣。",
       },
       {
-        title: "充值套餐",
-        body: "购买 USD 100、300 或 500 的广告余额套餐，并分配到你的账户。",
+        title: "灵活付款",
+        body: "通过 Yape、Plin、银行转账或 USDT 为钱包充值，并分配到你的账户。",
       },
       {
         title: "角色清晰",
@@ -956,8 +950,6 @@ const zh: LandingCopy = {
     tagline: "钱包、TikTok Ads 与 Hecom Club 运营",
     ariaNav: "页脚",
     solutions: "解决方案",
-    buy: "购买",
-    cart: "购物车",
     terms: "条款与条件",
     returns: "换货与退货",
     complaints: "投诉登记簿",
@@ -981,7 +973,7 @@ const pt: LandingCopy = {
     about: "Sobre nós",
     faq: "Perguntas",
     login: "Entrar",
-    buy: "Comprar",
+    register: "Cadastrar",
     openMenu: "Abrir menu",
     closeMenu: "Fechar menu",
     language: "Idioma",
@@ -1137,8 +1129,8 @@ const pt: LandingCopy = {
         body: "Convide outros anunciantes e ganhe USD 10 de desconto por cada um que virar cliente.",
       },
       {
-        title: "Pacotes de recarga",
-        body: "Compre saldo publicitário em pacotes de USD 100, 300 ou 500 e atribua às suas contas.",
+        title: "Pague como preferir",
+        body: "Recarregue sua carteira com Yape, Plin, transferência bancária ou USDT e atribua às suas contas.",
       },
       {
         title: "Papéis claros",
@@ -1231,8 +1223,6 @@ const pt: LandingCopy = {
     tagline: "Carteira, TikTok Ads e operação Hecom Club",
     ariaNav: "Rodapé",
     solutions: "Soluções",
-    buy: "Comprar",
-    cart: "Carrinho",
     terms: "Termos e condições",
     returns: "Trocas e devoluções",
     complaints: "Livro de reclamações",
