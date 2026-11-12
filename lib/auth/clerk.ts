@@ -25,7 +25,7 @@ export function clerkRuntimeReady() {
 /**
  * Solo se prende con AUTH_CLERK_LOGIN=true explícito; sin eso (o sin claves) → OTP en /login.
  */
-const CLERK_LOGIN_KILL_SWITCH = true;
+const CLERK_LOGIN_KILL_SWITCH = false;
 
 export function clerkLoginEnabled() {
   // APAGADO (2026-11-12): la instancia de Clerk aún no tiene a los clientes/gerentes,

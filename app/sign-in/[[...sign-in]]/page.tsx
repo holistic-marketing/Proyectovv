@@ -51,11 +51,14 @@ export default async function ClerkSignInPage({
   const rejectedMessage = clerkBridgeErrorMessage(typeof error === "string" ? error : null);
   const signIn = (
     <SignIn
+      withSignUp
       routing="path"
       path={clerkRoutes.signIn}
       signUpUrl={clerkRoutes.signUp}
       forceRedirectUrl={clerkRoutes.complete}
       fallbackRedirectUrl={clerkRoutes.complete}
+      signUpForceRedirectUrl={clerkRoutes.complete}
+      signUpFallbackRedirectUrl={clerkRoutes.complete}
     />
   );
 
