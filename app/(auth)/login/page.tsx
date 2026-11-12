@@ -24,9 +24,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (clerkLoginEnabled()) {
+  const params = await searchParams;
+  // ?codigo=1: respaldo con OTP cuando el formulario de Clerk no carga (Brave, bloqueadores).
+  if (clerkLoginEnabled() && params.codigo !== "1") {
     // Conserva el motivo de un rechazo del puente Clerk para mostrarlo en /sign-in.
-    const { error } = await searchParams;
+    const { error } = params;
     const code = typeof error === "string" ? error : null;
     redirect(code ? `${clerkRoutes.signIn}?error=${encodeURIComponent(code)}` : clerkRoutes.signIn);
   }

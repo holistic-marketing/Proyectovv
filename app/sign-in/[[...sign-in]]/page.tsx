@@ -7,6 +7,7 @@ import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
 import { ClerkAuthShell } from "@/features/auth/components/ClerkAuthShell";
+import { ClerkLoadFallback } from "@/features/auth/components/ClerkLoadFallback.client";
 import { ClerkRejectedGate } from "@/features/auth/components/ClerkRejectedGate.client";
 import {
   clerkConfigured,
@@ -73,11 +74,13 @@ export default async function ClerkSignInPage({
   return (
     <ClerkAuthShell>
       <ClerkMountGate>
-        {rejectedMessage ? (
-          <ClerkRejectedGate message={rejectedMessage}>{signIn}</ClerkRejectedGate>
-        ) : (
-          signIn
-        )}
+        <ClerkLoadFallback>
+          {rejectedMessage ? (
+            <ClerkRejectedGate message={rejectedMessage}>{signIn}</ClerkRejectedGate>
+          ) : (
+            signIn
+          )}
+        </ClerkLoadFallback>
       </ClerkMountGate>
     </ClerkAuthShell>
   );
