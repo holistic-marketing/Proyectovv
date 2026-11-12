@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
+import { isStaffUser } from "@/lib/auth/staff.server";
 import {
   canSwitchTesterDashboardMode,
   parseTesterDashboardMode,
@@ -34,11 +34,15 @@ export async function setTesterDashboardMode(
   });
 }
 
-/** Staff real, o el tester cuando eligió modo gerente. */
+/**
+ * Staff real (staff_members con caché), o el tester según su cookie de modo.
+ * Para el tester manda la cookie: así su modo "cliente" funciona aunque esté en el roster.
+ */
 export async function sessionIsGerente(
   email: string | null | undefined,
 ): Promise<boolean> {
   if (!email) return false;
-  if (isHecomOtpStaffEmail(email)) return true;
-  return (await getTesterDashboardMode(email)) === "gerente";
+  const mode = await getTesterDashboardMode(email);
+  if (mode !== null) return mode === "gerente";
+  return isStaffUser(email);
 }

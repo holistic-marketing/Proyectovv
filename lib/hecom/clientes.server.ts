@@ -481,31 +481,41 @@ export async function updateHecomClienteDocument(input: {
  * Alta de cliente nuevo desde Registro Ads Holistic → Hecom Club CRM.
  * Prepago por defecto (sin credito_form_slug).
  */
-export async function createHecomCliente(input: {
-  name: string;
-  dni: string;
+export type CreateHecomClienteInput = {
+  /** Vacío → parte del correo antes de la @ (mín. 2 caracteres). */
+  name?: string | null;
+  /** Opcional (registro rápido): sin documento se guarda `null` y Yape lo pide al pagar. */
+  dni?: string | null;
   email: string;
   phone: string;
   /** País del registro (documento y teléfono). Perú si no viene. */
   country?: RegisterCountry;
   /** Dirección del registro: Hecom no tiene columna, va en las notas (carta notarial). */
   address?: string;
-}): Promise<
+};
+
+/** Nombre para la ficha: el escrito o, si falta, la parte local del correo. */
+function clienteNameOrEmailPrefix(rawName: string | null | undefined, email: string): string {
+  const name = String(rawName ?? "").replace(/\s+/g, " ").trim();
+  if (name.length >= 2) return name;
+  const prefix = email.split("@")[0]?.trim() ?? "";
+  return prefix.length >= 2 ? prefix : "Cliente";
+}
+
+export async function createHecomCliente(input: CreateHecomClienteInput): Promise<
   | { ok: true; cliente: HecomCliente }
   | { ok: false; message: string; code?: "duplicate_email" | "config" | "insert" }
 > {
   const country = getRegisterCountry(input.country);
-  const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
 
-  if (name.length < 2) {
-    return { ok: false, message: "Ingresa tu nombre completo.", code: "insert" };
-  }
-  if (!isValidDoc(country, input.dni)) {
-    return { ok: false, message: country.docError.es, code: "insert" };
-  }
   if (!email.includes("@")) {
     return { ok: false, message: "Correo electrónico inválido.", code: "insert" };
+  }
+  const name = clienteNameOrEmailPrefix(input.name, email);
+  const rawDoc = String(input.dni ?? "").trim();
+  if (rawDoc && !isValidDoc(country, rawDoc)) {
+    return { ok: false, message: country.docError.es, code: "insert" };
   }
   if (!isValidPhone(country, input.phone)) {
     return {
@@ -514,8 +524,8 @@ export async function createHecomCliente(input: {
       code: "insert",
     };
   }
-  // Perú sin prefijo (como siempre); el resto «CO-…», «EC-…», «BR-…».
-  const dni = storedDoc(country, input.dni);
+  // Perú sin prefijo (como siempre); el resto «CO-…», «EC-…», «BR-…». Sin documento → null.
+  const dni = rawDoc ? storedDoc(country, rawDoc) : null;
 
   const cfg = getHecomSupabaseConfig();
   if (!cfg.configured) {
@@ -536,7 +546,7 @@ export async function createHecomCliente(input: {
   }
 
   const phoneNormalized = storedPhone(country, input.phone);
-  const address = String(input.address ?? "").replace(/s+/g, " ").trim().slice(0, 240);
+  const address = String(input.address ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
   const notes = `Alta desde Ads Holistic · registro OTP${address ? ` · Dirección: ${address}` : ""}`;
 
   try {

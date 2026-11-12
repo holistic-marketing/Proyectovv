@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -43,62 +44,69 @@ function friendlyTransferError(raw: string, fallback: string): string {
 
 export function TransferBalanceModal({
   sourceAccount,
-  allAccounts,
   open,
+  ...props
+}: TransferBalanceModalProps) {
+  const mounted = useIsClient();
+  if (!open || !sourceAccount || !mounted) return null;
+  // El cuerpo solo existe mientras está abierto: monto y destino se fijan al abrir y el
+  // polling del saldo en vivo ya no pisa lo escrito ni borra el mensaje de éxito.
+  return (
+    <TransferBalanceModalBody
+      key={sourceAccount.id}
+      sourceAccount={sourceAccount}
+      {...props}
+    />
+  );
+}
+
+function TransferBalanceModalBody({
+  sourceAccount,
+  allAccounts,
   onClose,
   agencyBmFunding = false,
   allowForceLedger = false,
   clientSelfService = false,
   onFundingChanged,
   liveMetricsByAdvertiser,
-}: TransferBalanceModalProps) {
+}: Omit<TransferBalanceModalProps, "open" | "sourceAccount"> & {
+  sourceAccount: PaymentAccountAllocation;
+}) {
   const router = useRouter();
   const t = useTranslations("payments");
   const tCommon = useTranslations("common");
   const { formatMoney } = useAppFormatter();
-  const [mounted, setMounted] = useState(false);
-  const [toAccountId, setToAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [forceLedgerOnly, setForceLedgerOnly] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const destinationOptions = useMemo(
     () =>
       allAccounts.filter(
         (a) =>
-          a.id !== sourceAccount?.id &&
+          a.id !== sourceAccount.id &&
           a.status !== "disabled" &&
           Number(a.balance) >= 0,
       ),
-    [allAccounts, sourceAccount?.id],
+    [allAccounts, sourceAccount.id],
   );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const sourceLiveUsd = sourceAccount
-    ? liveMetricsByAdvertiser?.[
-        sourceAccount.externalAccountId?.trim() ?? ""
-      ]?.balanceUsd
-    : undefined;
+  // Máximo transferible: se recalcula en cada render (validación siempre al día).
+  const sourceLiveUsd =
+    liveMetricsByAdvertiser?.[sourceAccount.externalAccountId?.trim() ?? ""]
+      ?.balanceUsd;
   const maxAmount = Math.max(
     0,
     sourceLiveUsd != null && Number.isFinite(sourceLiveUsd)
       ? sourceLiveUsd
-      : Number(sourceAccount?.balance) || 0,
+      : Number(sourceAccount.balance) || 0,
   );
 
-  useEffect(() => {
-    if (!open || !sourceAccount) return;
-    setAmount(maxAmount > 0 ? String(maxAmount) : "");
-    setToAccountId(destinationOptions[0]?.id ?? "");
-    setForceLedgerOnly(false);
-    setError(null);
-    setSuccess(null);
-  }, [open, sourceAccount, destinationOptions, maxAmount]);
+  // Valores iniciales: solo al abrir (misma fórmula que el efecto anterior).
+  const [toAccountId, setToAccountId] = useState(() => destinationOptions[0]?.id ?? "");
+  const [amount, setAmount] = useState(() => (maxAmount > 0 ? String(maxAmount) : ""));
+  const [forceLedgerOnly, setForceLedgerOnly] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const parsed = Number.parseFloat(amount);
   const isValid =
     Boolean(toAccountId) &&
@@ -178,8 +186,6 @@ export function TransferBalanceModal({
       setLoading(false);
     }
   }
-
-  if (!open || !sourceAccount || !mounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

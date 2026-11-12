@@ -19,9 +19,16 @@ function AuthCardFallback() {
   );
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (clerkLoginEnabled()) {
-    redirect(clerkRoutes.signIn);
+    // Conserva el motivo de un rechazo del puente Clerk para mostrarlo en /sign-in.
+    const { error } = await searchParams;
+    const code = typeof error === "string" ? error : null;
+    redirect(code ? `${clerkRoutes.signIn}?error=${encodeURIComponent(code)}` : clerkRoutes.signIn);
   }
 
   const locale = await getLandingLocale();

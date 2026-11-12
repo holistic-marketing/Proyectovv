@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
 import { apiClient } from "@/lib/api/api-client.client";
+import { signOutOfClerkIfLoaded } from "@/lib/auth/clerk-sign-out.client";
 import { cn } from "@/lib/cn";
 import type { User } from "@/types/user";
 import {
@@ -54,13 +55,18 @@ export function DashboardUserMenu({
   async function handleLogout() {
     setLoggingOut(true);
     try {
-      const data = await apiClient<LogoutResponse>(routes.api.auth.logout, {
-        method: "POST",
-      });
-      router.push(data.redirectTo);
-      router.refresh();
-    } catch {
-      router.push(routes.login);
+      // 1) Supabase + cookies Hecom en el servidor; 2) sesión de Clerk en el navegador.
+      let redirectTo: string = routes.login;
+      try {
+        const data = await apiClient<LogoutResponse>(routes.api.auth.logout, {
+          method: "POST",
+        });
+        redirectTo = data.redirectTo;
+      } catch {
+        // Igual cerramos Clerk y salimos al login.
+      }
+      if (await signOutOfClerkIfLoaded(redirectTo)) return;
+      router.push(redirectTo);
       router.refresh();
     } finally {
       setLoggingOut(false);

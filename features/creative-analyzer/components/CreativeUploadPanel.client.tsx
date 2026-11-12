@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useRef, useState, type DragEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useObjectUrl } from "@/hooks/useObjectUrl";
 import { cn } from "@/lib/cn";
 import { apiClient, ApiClientError } from "@/lib/api/api-client.client";
 import type { CreativeAccountOption } from "@/lib/creatives/types";
@@ -53,35 +54,38 @@ export function CreativeUploadPanel({
   const [fixLabel, setFixLabel] = useState<string | null>(null);
   const [fixKind, setFixKind] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrl = useObjectUrl(file);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
+  // Modo "corregir" desde la URL (?fixDraft…): ajuste durante el render cuando cambian
+  // los parámetros. Se compara por valores (no por la identidad de `accounts`, que con
+  // el default `[]` es nueva en cada render) para no pisar la cuenta elegida a mano.
+  const fixDraftParam = searchParams.get("fixDraft")?.trim() || "";
+  const fixAccountParam = searchParams.get("fixAccount")?.trim() || "";
+  const fixLabelParam = searchParams.get("fixLabel")?.trim() || "";
+  const fixKindParam = searchParams.get("fixKind")?.trim() || "";
+  const fixAccountKnown =
+    Boolean(fixAccountParam) && accounts.some((a) => a.id === fixAccountParam);
+  const fixParamsKey = [
+    fixDraftParam,
+    fixAccountParam,
+    fixLabelParam,
+    fixKindParam,
+    fixAccountKnown ? "1" : "0",
+  ].join("\u0000");
+  const [appliedFixParamsKey, setAppliedFixParamsKey] = useState<string | null>(null);
+  if (appliedFixParamsKey !== fixParamsKey) {
+    setAppliedFixParamsKey(fixParamsKey);
+    if (fixDraftParam) {
+      setParentDraftId(fixDraftParam);
+      if (fixLabelParam) setFixLabel(fixLabelParam);
+      setFixKind(fixKindParam || null);
+      if (fixAccountKnown) setAdAccountId(fixAccountParam);
     }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  useEffect(() => {
-    const fixDraft = searchParams.get("fixDraft")?.trim() || "";
-    const fixAccount = searchParams.get("fixAccount")?.trim() || "";
-    const label = searchParams.get("fixLabel")?.trim() || "";
-    const kind = searchParams.get("fixKind")?.trim() || "";
-    if (!fixDraft) return;
-    setParentDraftId(fixDraft);
-    if (label) setFixLabel(label);
-    setFixKind(kind || null);
-    if (fixAccount && accounts.some((a) => a.id === fixAccount)) {
-      setAdAccountId(fixAccount);
-    }
-  }, [searchParams, accounts]);
+  }
 
   const pickFile = useCallback(
     (next: File | null) => {

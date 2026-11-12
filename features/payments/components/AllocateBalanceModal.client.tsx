@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -80,46 +81,45 @@ function friendlyAllocateError(
 export function AllocateBalanceModal({
   account,
   open,
+  ...props
+}: AllocateBalanceModalProps) {
+  const mounted = useIsClient();
+  if (!open || !account || !mounted) return null;
+  // El cuerpo solo existe mientras está abierto: el formulario arranca limpio en cada
+  // apertura (y con otra cuenta, por la key) sin efecto que lo reinicie.
+  return <AllocateBalanceModalBody key={account.id} account={account} {...props} />;
+}
+
+function AllocateBalanceModalBody({
+  account,
   onClose,
   agencyBmFunding = false,
   onFundingChanged,
   walletBalance = 0,
   onAllocated,
-}: AllocateBalanceModalProps) {
+}: Omit<AllocateBalanceModalProps, "open" | "account"> & {
+  account: PaymentAccountAllocation;
+}) {
   const router = useRouter();
   const t = useTranslations("payments");
   const tCommon = useTranslations("common");
   const { formatMoney } = useAppFormatter();
-  const [mounted, setMounted] = useState(false);
-  const [amount, setAmount] = useState("");
+  // Monto inicial al abrir: misma fórmula que antes (vacío en modo agencia).
+  const [amount, setAmount] = useState(() => {
+    if (agencyBmFunding) return "";
+    const available = Math.max(0, Number(walletBalance) || 0);
+    return available > 0 ? String(Math.round(available * 100) / 100) : "";
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !account) return;
-    setError(null);
-    if (agencyBmFunding) {
-      setAmount("");
-      return;
-    }
-    const available = Math.max(0, Number(walletBalance) || 0);
-    setAmount(available > 0 ? String(Math.round(available * 100) / 100) : "");
-  }, [open, account, agencyBmFunding, walletBalance]);
-
-  if (!open || !account || !mounted) return null;
+  }, []);
 
   const targetAccount = account;
   const parsedAmount = Number.parseFloat(amount);

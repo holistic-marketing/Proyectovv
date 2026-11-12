@@ -281,8 +281,8 @@ export default async function ClienteVistaPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-subtle)]">
-                    {spend.rows.map((row) => {
-                      const rowId = String(row.id ?? Math.random());
+                    {spend.rows.map((row, idx) => {
+                      const rowId = String(row.id ?? `spend-row-${idx}`);
                       if (spend.kind === "gastos") {
                         return (
                           <tr key={rowId}>

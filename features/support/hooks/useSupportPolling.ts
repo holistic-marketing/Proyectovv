@@ -70,9 +70,13 @@ export function useSupportThreadPolling(options: {
   const { enabled, intervalMs = 2000, fetchMessages, onMessages } = options;
   const fetchRef = useRef(fetchMessages);
   const onRef = useRef(onMessages);
-  fetchRef.current = fetchMessages;
-  onRef.current = onMessages;
   const inFlight = useRef(false);
+
+  // Callbacks al día sin reiniciar el intervalo; declarado antes del efecto de polling.
+  useEffect(() => {
+    fetchRef.current = fetchMessages;
+    onRef.current = onMessages;
+  });
 
   useEffect(() => {
     if (!enabled) return;
@@ -120,8 +124,12 @@ export function useSupportListPolling(options: {
 }) {
   const { enabled, intervalMs = 3000, refresh } = options;
   const refreshRef = useRef(refresh);
-  refreshRef.current = refresh;
   const inFlight = useRef(false);
+
+  // Callback al día sin reiniciar el intervalo; declarado antes del efecto de polling.
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
 
   useEffect(() => {
     if (!enabled) return;

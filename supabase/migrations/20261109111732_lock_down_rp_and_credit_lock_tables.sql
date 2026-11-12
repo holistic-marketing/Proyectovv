@@ -1,6 +1,5 @@
 -- Activa RLS y quita acceso público (anon/authenticated) a tablas que estaban expuestas.
 -- La app accede con service_role (createAdminClient), que no se ve afectada.
--- Aplicada en producción el 2026-11-09.
 DO $$
 DECLARE t text;
 BEGIN

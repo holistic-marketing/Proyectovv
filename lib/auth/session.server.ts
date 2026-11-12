@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { getPermissionsForRole } from "@/lib/auth/permissions";
 import { getAvatarInitials } from "@/lib/auth/utils";
-import { isHecomOtpStaffEmail } from "@/lib/auth/hecom-otp.server";
-import { getTesterDashboardMode } from "@/lib/auth/tester-dashboard-mode.server";
+import { sessionIsGerente } from "@/lib/auth/tester-dashboard-mode.server";
 import { createClient } from "@/lib/supabase/server";
 import type {
   OrganizationMembershipRow,
@@ -68,9 +67,8 @@ export const getSession = cache(async (): Promise<SessionUser | null> => {
   // El correo de Auth es el que se verificó al iniciar sesión. El de `profiles`
   // lo puede editar el propio usuario, así que no decide quién es gerente.
   const email = user.email ?? profile?.email ?? "";
-  const testerMode = await getTesterDashboardMode(email);
-  const staffPayments =
-    isHecomOtpStaffEmail(email) || testerMode === "gerente";
+  // staff_members (con caché) o, para el tester, la cookie de modo.
+  const isStaff = await sessionIsGerente(email);
 
   return {
     id: user.id,
@@ -78,7 +76,8 @@ export const getSession = cache(async (): Promise<SessionUser | null> => {
     email,
     avatarInitials: getAvatarInitials(fullName),
     role,
-    permissions: getPermissionsForRole(role, { staffPayments }),
+    permissions: getPermissionsForRole(role, { staffPayments: isStaff }),
+    isStaff,
     companyId: membership?.organization_id ?? "",
     organizationId: membership?.organization_id ?? "",
     organizationName: organization?.name ?? "",

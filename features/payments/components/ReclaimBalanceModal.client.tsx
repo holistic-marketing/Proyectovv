@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -29,34 +30,34 @@ interface ReclaimResponse {
 export function ReclaimBalanceModal({
   account,
   open,
+  ...props
+}: ReclaimBalanceModalProps) {
+  const mounted = useIsClient();
+  if (!open || !account || !mounted) return null;
+  // El cuerpo solo existe mientras está abierto: el formulario arranca limpio en cada
+  // apertura (y con otra cuenta, por la key) sin efecto que lo reinicie.
+  return <ReclaimBalanceModalBody key={account.id} account={account} {...props} />;
+}
+
+function ReclaimBalanceModalBody({
+  account,
   onClose,
   allowForceLedger = false,
   onFundingChanged,
-}: ReclaimBalanceModalProps) {
+}: Omit<ReclaimBalanceModalProps, "open" | "account"> & {
+  account: PaymentAccountAllocation;
+}) {
   const router = useRouter();
   const t = useTranslations("payments");
   const tCommon = useTranslations("common");
   const { formatMoney } = useAppFormatter();
-  const [mounted, setMounted] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(() =>
+    account.balance > 0 ? String(account.balance) : "",
+  );
   const [forceLedgerOnly, setForceLedgerOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open || !account) return;
-    setAmount(account.balance > 0 ? String(account.balance) : "");
-    setForceLedgerOnly(false);
-    setError(null);
-    setSuccess(null);
-  }, [open, account]);
-
-  if (!open || !account || !mounted) return null;
 
   const maxAmount = account.balance;
   const parsed = Number.parseFloat(amount);

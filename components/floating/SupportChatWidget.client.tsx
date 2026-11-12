@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import { apiClient, ApiClientError } from "@/lib/api/api-client.client";
@@ -94,17 +94,16 @@ export function SupportChatWidget({
   }, []);
   const rechargeBot = useRechargeBot(appendRechargeMessages);
 
-  // Keep greeting in sync when locale changes.
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 1 && prev[0]?.id === "support-greeting") {
-        return [greetingMessage(greetingText)];
-      }
-      return prev.map((msg) =>
-        msg.id === "support-greeting" ? { ...msg, text: greetingText } : msg,
-      );
-    });
-  }, [greetingText]);
+  // El saludo se resuelve al mostrar, con el idioma actual (sin efecto que reescriba el estado).
+  const displayMessages = useMemo(
+    () =>
+      messages.map((msg) =>
+        msg.id === "support-greeting" && msg.text !== greetingText
+          ? { ...msg, text: greetingText }
+          : msg,
+      ),
+    [messages, greetingText],
+  );
 
   const loadConversation = useCallback(
     async (opts?: { force?: boolean }) => {
@@ -175,6 +174,8 @@ export function SupportChatWidget({
   // Al abrir: ir directo al hilo (sin menú FAQ).
   useEffect(() => {
     if (!isOpen) return;
+    // Cargador intencional (carga del hilo al abrir el chat): activa loading/limpia error y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader
     void loadConversation({ force: !conversationLoaded });
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps -- open trigger
 
@@ -368,7 +369,7 @@ export function SupportChatWidget({
           )}
         >
           <ChatConversation
-            messages={messages}
+            messages={displayMessages}
             inputValue={inputValue}
             sending={sending}
             loading={loadingConversation}

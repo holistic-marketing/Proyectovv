@@ -34,9 +34,8 @@ export function CobroComprobantePreview({
   const [error, setError] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const loadUrl = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Sin setters síncronos: al montar `loading` ya arranca en true; `retry` pone el spinner.
+  const fetchProof = useCallback(async () => {
     try {
       const data = await apiClient<{
         url: string;
@@ -63,8 +62,16 @@ export function CobroComprobantePreview({
   }, [cobroId, endpoint, index, t]);
 
   useEffect(() => {
-    void loadUrl();
-  }, [loadUrl]);
+    // Carga asíncrona: fetchProof() solo actualiza estado después del await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchProof();
+  }, [fetchProof]);
+
+  function retry() {
+    setLoading(true);
+    setError(null);
+    void fetchProof();
+  }
 
   if (loading) {
     return (
@@ -79,7 +86,7 @@ export function CobroComprobantePreview({
     return (
       <button
         type="button"
-        onClick={() => void loadUrl()}
+        onClick={retry}
         className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-[9px] font-medium text-red-700"
         title={error ?? t("retry")}
       >

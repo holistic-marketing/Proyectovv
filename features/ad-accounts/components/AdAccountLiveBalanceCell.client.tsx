@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useTranslations } from "next-intl";
+import { useNow } from "@/hooks/useNow";
 import { formatMoney } from "@/lib/format-money";
 import type { AdAccountLiveMetricsClient } from "@/features/ad-accounts/hooks/useAdAccountLiveMetrics";
 import { classifyTikTokLiveBalance } from "@/features/ad-accounts/lib/classify-tiktok-live-balance";
@@ -17,10 +18,11 @@ export function AdAccountLiveBalanceCell({
   agencyBmFunding?: boolean;
 }) {
   const t = useTranslations("adAccounts.live");
+  const now = useNow();
 
   function formatUpdatedAgo(fetchedAt: string | null | undefined): string {
     if (!fetchedAt) return t("updating");
-    const ms = Date.now() - Date.parse(fetchedAt);
+    const ms = now - Date.parse(fetchedAt);
     if (!Number.isFinite(ms) || ms < 0) return t("now");
     if (ms < 15_000) return t("now");
     const sec = Math.round(ms / 1000);

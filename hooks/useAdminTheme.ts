@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useSyncExternalStore, type MouseEvent } from "react";
+import { useIsClient } from "@/hooks/useIsClient";
 
 export type AdminTheme = "light" | "dark";
 
@@ -42,23 +43,28 @@ export function forceDocumentLightTheme() {
   applyThemeToDom("light");
 }
 
-export function useAdminTheme() {
-  const [theme, setThemeState] = useState<AdminTheme>("light");
-  const [mounted, setMounted] = useState(false);
+// La clase de <html> es la fuente de verdad (la ponen el script inicial,
+// DocumentThemeScope y setTheme); el hook solo la observa.
+function subscribeToDomTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+}
 
-  useEffect(() => {
-    setThemeState(readDomTheme());
-    setMounted(true);
-  }, []);
+const getServerTheme = (): AdminTheme => "light";
+
+export function useAdminTheme() {
+  const theme = useSyncExternalStore(subscribeToDomTheme, readDomTheme, getServerTheme);
+  const mounted = useIsClient();
 
   const setTheme = useCallback((next: AdminTheme) => {
     const root = document.documentElement;
     const current = readDomTheme();
 
-    if (current === next) {
-      setThemeState(next);
-      return;
-    }
+    if (current === next) return;
 
     const applyTheme = () => {
       applyThemeToDom(next);
@@ -67,7 +73,6 @@ export function useAdminTheme() {
       } catch {
         // ignore storage failures
       }
-      setThemeState(next);
     };
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

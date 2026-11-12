@@ -117,6 +117,7 @@ export function CreditLockPanel({
 
   useEffect(() => {
     if (!visible) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader: loads billing/credit data on visibility change
     void load();
   }, [load, visible]);
 

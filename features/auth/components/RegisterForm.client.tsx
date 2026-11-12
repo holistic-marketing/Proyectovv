@@ -93,7 +93,7 @@ function validateForm(
   if (!isValidPhone(country, values.phone)) {
     return t.errPhone;
   }
-  if (values.address.replace(/s+/g, " ").trim().length < 8) {
+  if (values.address.replace(/\s+/g, " ").trim().length < 8) {
     return t.errAddress;
   }
   if (!values.email.trim().includes("@")) {
@@ -127,7 +127,17 @@ export function RegisterForm({ locale = "es" }: { locale?: LandingLocale }) {
   // Código de invitación del aliado o de referido. El link del aliado (?a=) va
   // aparte: no es un código y no se escribe aquí.
   const [promoCode, setPromoCode] = useState(() => (referralCode ?? "").toUpperCase());
-  const [promo, setPromo] = useState<PromoState>({ status: "idle" });
+  // Último resultado del servidor, atado al código que se verificó.
+  const [promoResult, setPromoResult] = useState<{ code: string; result: PromoState } | null>(
+    null,
+  );
+  const trimmedPromoCode = promoCode.trim();
+  // idle / checking se derivan: no se guardan desde el efecto.
+  const promo: PromoState = !trimmedPromoCode
+    ? { status: "idle" }
+    : promoResult?.code === trimmedPromoCode
+      ? promoResult.result
+      : { status: "checking" };
 
   useEffect(() => {
     if (!referralCode) return;
@@ -137,24 +147,22 @@ export function RegisterForm({ locale = "es" }: { locale?: LandingLocale }) {
 
   useEffect(() => {
     const code = promoCode.trim();
-    if (!code) {
-      setPromo({ status: "idle" });
-      return;
-    }
-    setPromo({ status: "checking" });
+    if (!code) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/partners/code?code=${encodeURIComponent(code)}`, { signal: controller.signal });
         const data = (await res.json()) as { ok?: boolean; kind?: "partner" | "referral"; label?: string };
-        setPromo(
-          data.ok && data.kind && data.label
-            ? { status: "valid", kind: data.kind, label: data.label }
-            : { status: "invalid" },
-        );
+        setPromoResult({
+          code,
+          result:
+            data.ok && data.kind && data.label
+              ? { status: "valid", kind: data.kind, label: data.label }
+              : { status: "invalid" },
+        });
       } catch {
         // Sin red o cancelado: el servidor vuelve a validar al enviar.
-        if (!controller.signal.aborted) setPromo({ status: "idle" });
+        if (!controller.signal.aborted) setPromoResult({ code, result: { status: "idle" } });
       }
     }, 450);
     return () => {
@@ -196,7 +204,7 @@ export function RegisterForm({ locale = "es" }: { locale?: LandingLocale }) {
           name: joinFullName(values),
           dni: values.dni.trim().replace(/\D/g, ""),
           phone: values.phone.trim(),
-          address: values.address.replace(/s+/g, " ").trim(),
+          address: values.address.replace(/\s+/g, " ").trim(),
           country: country.code,
           email: values.email.trim(),
           // Se guardan al crear el cliente: el usuario recién existe tras el OTP.

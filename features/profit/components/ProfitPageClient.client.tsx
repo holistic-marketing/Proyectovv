@@ -903,9 +903,13 @@ export function ProfitPageClient({
         (a, b) => (b.spendTodayUsd ?? 0) - (a.spendTodayUsd ?? 0),
       );
   }, [live.metricsByAdvertiser]);
-  const liveBalanceTotal = Object.values(live.metricsByAdvertiser).reduce(
-    (s, a) => s + (a.balanceUsd ?? 0),
-    0,
+  const liveBalanceTotal = useMemo(
+    () =>
+      Object.values(live.metricsByAdvertiser).reduce(
+        (s, a) => s + (a.balanceUsd ?? 0),
+        0,
+      ),
+    [live.metricsByAdvertiser],
   );
   const liveSpendTotal = Object.values(live.metricsByAdvertiser).reduce(
     (s, a) => s + (a.spendTodayUsd ?? 0),
@@ -962,11 +966,12 @@ export function ProfitPageClient({
     }
   }, [from, to, t]);
 
+  // Rango invertido: se valida al renderizar y no se dispara la carga.
+  const dateOrderError = from && to && from > to ? t("dateOrderError") : null;
+  const displayError = dateOrderError ?? error;
+
   useEffect(() => {
-    if (from && to && from > to) {
-      setError(t("dateOrderError"));
-      return;
-    }
+    if (from && to && from > to) return;
     // Primera carga al toque; los cambios de fecha sí esperan un poco.
     const delay = firstLoadRef.current ? 0 : 280;
     firstLoadRef.current = false;
@@ -1127,12 +1132,12 @@ export function ProfitPageClient({
 
       {radarInvite ? <RadarInviteCard /> : null}
 
-      {error ? (
+      {displayError ? (
         <div
           className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-950"
           role="alert"
         >
-          {error}
+          {displayError}
         </div>
       ) : null}
 

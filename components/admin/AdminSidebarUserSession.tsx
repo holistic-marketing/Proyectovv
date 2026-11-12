@@ -1,4 +1,4 @@
-import { signOutAdminAction } from "@/app/actions/admin-auth";
+import { AdminSignOutButton } from "@/components/admin/AdminSignOutButton.client";
 import type { AdminSession } from "@/lib/admin/auth";
 
 function getInitials(fullName: string | null, email: string): string {
@@ -43,17 +43,14 @@ export function AdminSidebarUserSession({ admin }: AdminSidebarUserSessionProps)
           </div>
         </div>
 
-        <form action={signOutAdminAction} className="mt-2">
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-[var(--admin-text-muted)] transition-colors duration-150 hover:bg-[var(--admin-session-hover-bg)] hover:text-[var(--admin-text)]"
-          >
+        <div className="mt-2">
+          <AdminSignOutButton className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-[var(--admin-text-muted)] transition-colors duration-150 hover:bg-[var(--admin-session-hover-bg)] hover:text-[var(--admin-text)] disabled:opacity-60">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
             </svg>
             Salir
-          </button>
-        </form>
+          </AdminSignOutButton>
+        </div>
       </div>
     </div>
   );

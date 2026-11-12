@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useNow } from "@/hooks/useNow";
 import { cn } from "@/lib/cn";
 import {
   MEETING_TYPES,
@@ -137,9 +138,9 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
     [t],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Carga sin setters síncronos: el efecto la usa al montar (loading ya arranca en true)
+  // y los handlers que cambian asesor/reprogramación ponen el spinner ellos mismos.
+  const fetchMeetings = useCallback(async () => {
     try {
       const params = new URLSearchParams({ from: currentMonday, days: "14" });
       if (rescheduleId) params.set("ignore", rescheduleId);
@@ -162,12 +163,27 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
     }
   }, [advisorEmail, currentMonday, explain, rescheduleId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    await fetchMeetings();
+  }, [fetchMeetings]);
 
+  /** Cambio de asesor o de reprogramación: el efecto recarga; aquí va el spinner. */
+  function markReloading() {
+    setLoading(true);
+    setError(null);
+  }
+
+  useEffect(() => {
+    // Carga asíncrona: fetchMeetings() solo actualiza estado después del await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchMeetings();
+  }, [fetchMeetings]);
+
+  const now = useNow();
   const openMeetings = meetings.filter(
-    (meeting) => ACTIVE.has(meeting.status) && Date.parse(meeting.endsAt) > Date.now(),
+    (meeting) => ACTIVE.has(meeting.status) && Date.parse(meeting.endsAt) > now,
   );
   const nextMeeting = [...openMeetings].sort(
     (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt),
@@ -189,6 +205,7 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
 
   function chooseAdvisor(email: string) {
     if (email === advisorEmail) return;
+    markReloading();
     setAdvisorEmail(email);
     setSelectedCell(null);
     setSelectedSlot(null);
@@ -295,7 +312,9 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
       meeting.advisorEmail && advisors.some((person) => person.email === meeting.advisorEmail)
         ? meeting.advisorEmail
         : advisorEmail;
-    if (nextAdvisor && nextAdvisor !== advisorEmail) {
+    const advisorChanges = Boolean(nextAdvisor) && nextAdvisor !== advisorEmail;
+    if (advisorChanges || meeting.id !== rescheduleId) markReloading();
+    if (advisorChanges) {
       setAdvisorEmail(nextAdvisor);
       setGrid(null);
     }
@@ -350,6 +369,7 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
           <button
             type="button"
             onClick={() => {
+              markReloading();
               setRescheduleId(null);
               setSelectedCell(null);
               setSelectedSlot(null);
@@ -547,6 +567,7 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
           ) : selected ? (
             <MeetingDetail
               meeting={selected}
+              now={now}
               saving={saving}
               when={labelWhen(selected.startsAt)}
               onClose={() => setSelectedId(null)}
@@ -571,6 +592,7 @@ export function ClientMeetingsPanel({ onBack }: { onBack: () => void }) {
           ) : (
             <MeetingList
               meetings={meetings}
+              now={now}
               labelWhen={labelWhen}
               onSelect={setSelectedId}
               onReschedule={startReschedule}
@@ -693,6 +715,7 @@ function HourRow({
 function MeetingGroup({
   title,
   meetings,
+  now,
   empty,
   labelWhen,
   onSelect,
@@ -700,6 +723,7 @@ function MeetingGroup({
 }: {
   title: string;
   meetings: MeetingDto[];
+  now: number;
   empty?: string;
   labelWhen: (iso: string) => string;
   onSelect: (id: string) => void;
@@ -714,7 +738,7 @@ function MeetingGroup({
       ) : (
         <ul className="mt-3 space-y-2">
           {meetings.map((meeting) => {
-            const canMove = Boolean(onReschedule) && Date.parse(meeting.startsAt) > Date.now();
+            const canMove = Boolean(onReschedule) && Date.parse(meeting.startsAt) > now;
             return (
               <li key={meeting.id} className="rounded-xl border border-[var(--auth-input-border)] px-3 py-2.5">
                 <button type="button" onClick={() => onSelect(meeting.id)} className="flex w-full items-start justify-between gap-3 text-left">
@@ -749,18 +773,20 @@ function MeetingGroup({
 
 function MeetingList({
   meetings,
+  now,
   labelWhen,
   onSelect,
   onReschedule,
 }: {
   meetings: MeetingDto[];
+  now: number;
   labelWhen: (iso: string) => string;
   onSelect: (id: string) => void;
   onReschedule: (meeting: MeetingDto) => void;
 }) {
   const t = useTranslations("support");
   const upcoming = meetings
-    .filter((meeting) => ACTIVE.has(meeting.status) && Date.parse(meeting.endsAt) >= Date.now())
+    .filter((meeting) => ACTIVE.has(meeting.status) && Date.parse(meeting.endsAt) >= now)
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const history = meetings
     .filter((meeting) => !upcoming.some((item) => item.id === meeting.id))
@@ -770,9 +796,9 @@ function MeetingList({
   }
   return (
     <div className="space-y-4">
-      <MeetingGroup title={t("meetings.upcoming")} meetings={upcoming} empty={t("meetings.noUpcoming")} labelWhen={labelWhen} onSelect={onSelect} onReschedule={onReschedule} />
+      <MeetingGroup title={t("meetings.upcoming")} meetings={upcoming} now={now} empty={t("meetings.noUpcoming")} labelWhen={labelWhen} onSelect={onSelect} onReschedule={onReschedule} />
       {history.length > 0 ? (
-        <MeetingGroup title={t("meetings.history")} meetings={history} labelWhen={labelWhen} onSelect={onSelect} />
+        <MeetingGroup title={t("meetings.history")} meetings={history} now={now} labelWhen={labelWhen} onSelect={onSelect} />
       ) : null}
     </div>
   );
@@ -780,6 +806,7 @@ function MeetingList({
 
 function MeetingDetail({
   meeting,
+  now,
   when,
   saving,
   moving,
@@ -791,6 +818,7 @@ function MeetingDetail({
   onMove,
 }: {
   meeting: MeetingDto;
+  now: number;
   when: string;
   saving: boolean;
   moving: boolean;
@@ -802,7 +830,7 @@ function MeetingDetail({
   onMove: () => void;
 }) {
   const t = useTranslations("support");
-  const open = ACTIVE.has(meeting.status) && Date.parse(meeting.startsAt) > Date.now();
+  const open = ACTIVE.has(meeting.status) && Date.parse(meeting.startsAt) > now;
   const canJoin = Boolean(meeting.meetUrl) && (meeting.status === "confirmed" || meeting.status === "rescheduled");
   return (
     <div className="space-y-3">

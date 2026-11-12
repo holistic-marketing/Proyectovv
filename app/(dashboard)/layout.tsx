@@ -18,12 +18,15 @@ import { getTesterDashboardMode } from "@/lib/auth/tester-dashboard-mode.server"
 import type { DashboardPersona } from "@/types/dashboard-persona";
 import { getSignedPartnerForCliente } from "@/lib/partners/partners.server";
 
+// Instrumentación del log [dashboard-layout]; fuera del componente para no leer el reloj en el render.
+const readTimestamp = () => Date.now();
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const started = Date.now();
+  const started = readTimestamp();
   const session = await requireSession();
 
   // No bloquea: el listado de BM se usa después en Cuentas ads y Pagos.
@@ -108,9 +111,10 @@ export default async function DashboardLayout({
     avatarInitials: session.avatarInitials,
   };
 
-  if (process.env.NODE_ENV !== "production" || Date.now() - started > 400) {
+  const ms = readTimestamp() - started;
+  if (process.env.NODE_ENV !== "production" || ms > 400) {
     console.info("[dashboard-layout]", {
-      ms: Date.now() - started,
+      ms,
       persona,
       chromePersona,
       actingAsCliente,

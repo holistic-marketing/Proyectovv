@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SignUp } from "@clerk/nextjs";
 import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
+import { ClerkPasswordlessSignUp } from "@/features/auth/components/ClerkPasswordlessSignUp.client";
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
@@ -44,13 +44,7 @@ export default function ClerkSignUpPage() {
       }}
     >
       <ClerkMountGate>
-        <SignUp
-          routing="path"
-          path={clerkRoutes.signUp}
-          signInUrl={clerkRoutes.signIn}
-          forceRedirectUrl={clerkRoutes.complete}
-          fallbackRedirectUrl={clerkRoutes.complete}
-        />
+        <ClerkPasswordlessSignUp />
       </ClerkMountGate>
     </AuthSplitShell>
   );

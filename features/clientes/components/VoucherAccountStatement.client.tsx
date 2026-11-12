@@ -304,7 +304,17 @@ export function VoucherAccountStatement({
     let gastoRun = 0;
     let feeRun = 0;
     let paidRun = 0;
-    const series = eachYmd(from, chartTo).map((fecha) => {
+    const series: {
+      key: string;
+      label: string;
+      gasto: number;
+      fee: number;
+      cargo: number;
+      paid: number;
+      cargoCum: number;
+      paidCum: number;
+    }[] = [];
+    for (const fecha of eachYmd(from, chartTo)) {
       const existing = buckets.get(fecha);
       const dayGasto = existing?.gasto ?? 0;
       const dayFee = existing?.fee ?? 0;
@@ -315,7 +325,7 @@ export function VoucherAccountStatement({
       const dayCargo = round2(dayGasto + dayFee);
       // Prefijo con la misma fórmula que Gastado + Fee del mes.
       const cargoCum = round2(round2(gastoRun) + round2(feeRun));
-      return {
+      series.push({
         key: fecha,
         label: String(Number(fecha.slice(8, 10))),
         gasto: dayGasto,
@@ -324,8 +334,8 @@ export function VoucherAccountStatement({
         paid: round2(dayPaid),
         cargoCum,
         paidCum: round2(paidRun),
-      };
-    });
+      });
+    }
 
     const peakCargo = series.reduce(
       (best, row) => (row.cargo > best.cargo ? row : best),

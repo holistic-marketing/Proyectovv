@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/cn";
 import { shiftYmd, todayYmdInTz } from "@/lib/hecom/gasto-date";
 
@@ -151,7 +152,7 @@ export function DateRangePicker({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
   const [anchorMonth, setAnchorMonth] = useState(monthStart(startDate));
@@ -164,19 +165,18 @@ export function DateRangePicker({
   });
   const today = useMemo(() => todayYmdInTz(), []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) {
-      setDraftStart(startDate);
-      setDraftEnd(endDate);
-      setPickingEnd(false);
+  // Único punto de apertura: el borrador parte del rango actual cada vez que se abre.
+  function toggleOpen() {
+    if (open) {
+      setOpen(false);
       return;
     }
+    setDraftStart(startDate);
+    setDraftEnd(endDate);
+    setPickingEnd(false);
     setAnchorMonth(monthStart(startDate));
-  }, [open, startDate, endDate]);
+    setOpen(true);
+  }
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
@@ -445,7 +445,7 @@ export function DateRangePicker({
         <button
           ref={triggerRef}
           type="button"
-          onClick={() => setOpen((current) => !current)}
+          onClick={toggleOpen}
           className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-[var(--auth-border)] bg-white px-3 text-left text-[12px] font-medium text-[var(--auth-text)] transition-colors hover:border-[var(--auth-accent)]/35 hover:bg-[var(--auth-bg)]"
           aria-expanded={open}
           aria-haspopup="dialog"

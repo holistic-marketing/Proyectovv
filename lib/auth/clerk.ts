@@ -1,4 +1,7 @@
-/** Clerk helpers for Holistic / Proyectovv auth */
+/**
+ * Clerk helpers para Ads Holistic.
+ * Instancia propia y aislada: sin modo satélite ni dominios compartidos con otros proyectos.
+ */
 
 const TRUTHY = new Set(["1", "true", "yes", "on"]);
 
@@ -14,50 +17,36 @@ export function clerkConfigured() {
   );
 }
 
-/** Satellite domain (adsholistic.com) — required on prod when sharing Clerk con impoerp.com. */
-export function clerkSatelliteConfigured() {
-  return (
-    envTruthy(process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE) &&
-    Boolean(process.env.NEXT_PUBLIC_CLERK_DOMAIN?.trim())
-  );
-}
-
-/**
- * Clerk listo en runtime: en prod exige satélite configurado (DNS + env).
- * En dev/local alcanza con keys.
- */
+/** Clerk listo en runtime: basta con las claves de la instancia propia. */
 export function clerkRuntimeReady() {
-  if (!clerkConfigured()) return false;
-  if (process.env.NODE_ENV !== "production") return true;
-  return clerkSatelliteConfigured();
+  return clerkConfigured();
 }
 
 /**
- * Feature flag: Clerk UI en /login.
- * Si AUTH_CLERK_LOGIN=true pero falta satélite en prod → OTP en /login (no pantalla rota).
+ * Solo se prende con AUTH_CLERK_LOGIN=true explícito; sin eso (o sin claves) → OTP en /login.
+ * Sin claves → OTP en /login. Con claves, AUTH_CLERK_LOGIN=false lo apaga.
  */
 export function clerkLoginEnabled() {
   if (!clerkRuntimeReady()) return false;
   const flag = process.env.AUTH_CLERK_LOGIN;
-  if (flag === undefined || flag === "") return true;
+  if (flag === undefined || flag === "") return false;
   return envTruthy(flag);
 }
 
 /** Hosts Clerk para Content-Security-Policy (next.config). */
 export const clerkCspHosts = {
   scripts: [
-    "https://clerk.impoerp.com",
     "https://clerk.adsholistic.com",
     "https://*.clerk.accounts.dev",
+    // Bot protection (Turnstile) del registro propio.
+    "https://challenges.cloudflare.com",
   ],
   connect: [
-    "https://clerk.impoerp.com",
     "https://clerk.adsholistic.com",
     "https://api.clerk.com",
     "https://*.clerk.accounts.dev",
   ],
   frames: [
-    "https://clerk.impoerp.com",
     "https://clerk.adsholistic.com",
     "https://*.clerk.accounts.dev",
     "https://challenges.cloudflare.com",
@@ -70,6 +59,8 @@ export const clerkCspHosts = {
 export const clerkRoutes = {
   signIn: "/sign-in",
   signUp: "/sign-up",
+  /** Destino del enlace mágico del correo. */
+  verify: "/auth/clerk/verify",
   complete: "/auth/clerk/complete",
   afterAuth: "/overview",
 } as const;

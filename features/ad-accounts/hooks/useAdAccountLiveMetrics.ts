@@ -113,6 +113,8 @@ export function useAdAccountLiveMetrics(enabled = true) {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
   const pendingForce = useRef(false);
+  // Reintento forzado sin que `refresh` se referencie a sí mismo dentro de su useCallback.
+  const refreshRef = useRef<((opts?: LiveMetricsRefreshOpts) => Promise<void>) | null>(null);
 
   const refresh = useCallback(
     async (opts?: LiveMetricsRefreshOpts) => {
@@ -144,12 +146,16 @@ export function useAdAccountLiveMetrics(enabled = true) {
         inFlight.current = false;
         if (pendingForce.current) {
           pendingForce.current = false;
-          void refresh({ force: true });
+          void refreshRef.current?.({ force: true });
         }
       }
     },
     [enabled, t],
   );
+
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
 
   /** Tras Asignar / Transferir / Recuperar: refresco inmediato + uno diferido. */
   const refreshAfterFundingChange = useCallback(async () => {
@@ -159,6 +165,8 @@ export function useAdAccountLiveMetrics(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
+    // Primera pasada del polling: refresh() marca error=null y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial polling triggers async fetch
     void refresh();
     const timer = window.setInterval(() => {
       void refresh();

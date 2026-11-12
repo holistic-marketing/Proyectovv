@@ -110,8 +110,12 @@ export function ProfitDateRangeField({
 
   const right = addMonths(leftY, leftM, 1);
 
-  useEffect(() => {
-    if (!open) return;
+  // Único punto de apertura: posiciona el mes visible y limpia la selección en curso.
+  function toggleOpen() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
     const p = parseYmd(from) ?? parseYmd(to);
     if (p) {
       setLeftY(p.y);
@@ -119,7 +123,8 @@ export function ProfitDateRangeField({
     }
     setDraftStart(null);
     setHoverYmd(null);
-  }, [open, from, to]);
+    setOpen(true);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -234,15 +239,11 @@ export function ProfitDateRangeField({
     return "text-[#c4bbb2] hover:bg-[#faf8f5]";
   }
 
-  function MonthGrid({
-    y,
-    m,
-    cells,
-  }: {
-    y: number;
-    m: number;
-    cells: ReturnType<typeof monthCells>;
-  }) {
+  function renderMonthGrid(
+    y: number,
+    m: number,
+    cells: ReturnType<typeof monthCells>,
+  ) {
     return (
       <div className="min-w-[15.5rem]">
         <p className="px-1 pb-2 text-center text-[12px] font-semibold text-[#1c1917]">
@@ -288,7 +289,7 @@ export function ProfitDateRangeField({
         id={id}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className={`mt-1.5 flex h-11 w-full items-center justify-between gap-2 rounded-xl border bg-[#faf8f5] px-3.5 text-left text-[13px] font-medium tabular-nums text-[#1c1917] outline-none transition hover:bg-white focus:bg-white focus:ring-2 focus:ring-[var(--auth-accent)]/25 ${
           open
             ? "border-[var(--auth-accent)] bg-white"
@@ -364,9 +365,9 @@ export function ProfitDateRangeField({
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
-            <MonthGrid y={leftY} m={leftM} cells={leftCells} />
+            {renderMonthGrid(leftY, leftM, leftCells)}
             <div className="hidden w-px self-stretch bg-[#f0ebe4] sm:block" />
-            <MonthGrid y={right.y} m={right.m} cells={rightCells} />
+            {renderMonthGrid(right.y, right.m, rightCells)}
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#f0ebe4] pt-2">

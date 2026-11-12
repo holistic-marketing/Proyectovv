@@ -157,6 +157,8 @@ export function StaffMeetingsBoard({
   }, [loadBoard, loadSlots, moving, selectedId]);
 
   useEffect(() => {
+    // Cargador intencional (carga del tablero de reuniones): activa loading/limpia error y luego hace fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional lifecycle loader
     void reload();
   }, [reload]);
 

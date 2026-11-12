@@ -4,8 +4,9 @@
  * Shared modal shell: portal to body so dialogs stay centered on viewport
  * (avoids "scroll to bottom" when ancestors break position:fixed).
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 
 export function DashboardModalShell({
   open,
@@ -18,11 +19,7 @@ export function DashboardModalShell({
   children: ReactNode;
   maxWidthClassName?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   useEffect(() => {
     if (!open) return;

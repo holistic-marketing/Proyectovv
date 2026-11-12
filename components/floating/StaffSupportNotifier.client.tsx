@@ -89,6 +89,8 @@ export function StaffSupportNotifier() {
 
   useEffect(() => {
     if (onSupportPage) return;
+    // Polling asíncrono: poll() hace fetch y solo actualiza estado después del await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void poll();
     const id = window.setInterval(() => void poll(), 4000);
     return () => window.clearInterval(id);
