@@ -8,7 +8,8 @@
  *
  * Paleta clara tomada de /sign-in:
  * - fondo #f5f4f1 (`--ah-paper-alt`, clerk-auth-shell.module.css);
- * - tarjeta #ffffff, borde #e6e3dd, franja inferior #f5f4f1 (lib/auth/clerk-appearance.ts);
+ * - tarjeta #ffffff y borde #e6e3dd (lib/auth/clerk-appearance.ts); la franja inferior
+ *   también es blanca, separada solo por la línea #e6e3dd, para que la tarjeta se lea entera;
  * - texto #242522 / #4f514b / #676961, borde de campos #dcd8d1, terracota #d47840 / #b94708.
  *
  * Tablas + estilos en línea (modo claro): Gmail y Outlook ignoran flexbox y <svg>.
@@ -41,7 +42,8 @@ const LIGHT = {
   bg: "#f5f4f1",
   card: "#ffffff",
   border: "#e6e3dd",
-  footer: "#f5f4f1",
+  /** Blanco como la tarjeta: si fuera crema se confunde con el fondo y la tarjeta pierde su borde inferior. */
+  footer: "#ffffff",
   ink: "#242522",
   body: "#4f514b",
   muted: "#676961",
