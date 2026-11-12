@@ -8,18 +8,18 @@ import styles from "./clerk-auth-shell.module.css";
 const steps = [
   {
     n: "01",
-    title: "Pones tu correo",
-    body: "Te llega un link de acceso. Sin contraseñas que recordar.",
+    title: "Recarga tu cartera",
+    body: "Con Yape, Plin, bancos o USDT. El saldo se acredita al instante.",
   },
   {
     n: "02",
-    title: "Validamos tu cuenta",
-    body: "Revisamos que seas cliente o gerente de Ads Holistic.",
+    title: "Crea tus cuentas TikTok",
+    body: "Reparte el saldo entre tus cuentas ads cuando lo necesites.",
   },
   {
     n: "03",
-    title: "Entras a tu panel",
-    body: "Cartera, cuentas ads, pagos y gasto en un solo lugar.",
+    title: "Mide el ROAS real",
+    body: "Gasto y resultados de cada campaña, sin planillas ni dashboards genéricos.",
   },
 ];
 
@@ -49,13 +49,13 @@ export function ClerkAuthShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className={styles.content}>
-          <p className={styles.eyebrow}>Cómo funciona el acceso</p>
+          <p className={styles.eyebrow}>Agencia de TikTok Ads</p>
           <h1 className={styles.title}>
-            Tu publicidad, en un solo <em className={styles.accent}>lugar</em>
+            Controla tus campañas TikTok desde un solo <em className={styles.accent}>panel</em>
           </h1>
           <p className={styles.lead}>
-            Recarga tu cartera, asígnala a tus cuentas ads y sigue el movimiento de tu inversión
-            día a día.
+            Recarga con billetera, crea tus cuentas TikTok, reparte el saldo y mide el ROAS real
+            de cada campaña.
           </p>
 
           <ol className={styles.steps}>
@@ -98,7 +98,7 @@ export function ClerkAuthShell({ children }: { children: ReactNode }) {
           <div className={styles.mobileIntro}>
             <p className={styles.mobileEyebrow}>Acceso Ads Holistic</p>
             <p className={styles.mobileLead}>
-              Pones tu correo, abres el link y pasas directo a tu panel.
+              Controla tus campañas TikTok desde un solo panel.
             </p>
           </div>
 

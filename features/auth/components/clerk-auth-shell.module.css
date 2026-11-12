@@ -132,7 +132,7 @@
 
 .title {
   margin: 1rem 0 0;
-  max-width: 16ch;
+  max-width: 19ch;
   font-family: var(--font-sora), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   font-size: 2.35rem;
   font-weight: 800;
