@@ -50,22 +50,6 @@ export function NsxHero({
 }) {
   return (
     <section className="nsx-hero" id="soluciones">
-      {/* Video solo desktop: en móvil parpadea / pesa y rompe el primer paint */}
-      <video
-        className="nsx-hero-video nsx-hero-video--desktop"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="none"
-        poster="/landing/holistic/hero-dashboard.png"
-        aria-hidden
-      >
-        <source
-          src="/nexsas/automation/videos/hero-video.mp4"
-          type="video/mp4"
-        />
-      </video>
       <div className="nsx-hero-static" aria-hidden />
       <div className="nsx-hero-scrim" aria-hidden />
 
