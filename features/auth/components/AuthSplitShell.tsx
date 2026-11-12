@@ -21,6 +21,8 @@ interface AuthSplitShellProps {
   locale?: LandingLocale;
   /** Tarjeta «en vivo» arriba del formulario en celular (login y registro). */
   liveCompact?: boolean;
+  /** «muted»: panel derecho gris claro para que resalte la tarjeta (Clerk). */
+  surface?: "plain" | "muted";
 }
 
 function BrandLogo({ className, homeAria }: { className?: string; homeAria: string }) {
@@ -32,7 +34,7 @@ function BrandLogo({ className, homeAria }: { className?: string; homeAria: stri
 }
 
 /** Shared canvas for the entire public authentication journey. */
-export function AuthSplitShell({ children, caption, topRight, accountLinkPosition = "top", locale, liveCompact = false }: AuthSplitShellProps) {
+export function AuthSplitShell({ children, caption, topRight, accountLinkPosition = "top", locale, liveCompact = false, surface = "plain" }: AuthSplitShellProps) {
   const shellCopy = getAuthCopy(locale ?? "es").shell;
   const accountLink = (
     <div className={`${styles.accountLink} ${accountLinkPosition === "bottom" ? styles.accountLinkBottom : ""}`}>
@@ -50,7 +52,7 @@ export function AuthSplitShell({ children, caption, topRight, accountLinkPositio
           <BrandLogo className={styles.brandLink} homeAria={shellCopy.homeAria} />
         </div>
       </aside>
-      <div className={styles.formPanel}>
+      <div className={`${styles.formPanel} ${surface === "muted" ? styles.formPanelMuted : ""}`}>
         <header className={styles.topbar}>
           <BrandLogo className={styles.mobileBrand} homeAria={shellCopy.homeAria} />
           <div className="ml-auto flex items-center gap-2">
@@ -67,6 +69,10 @@ export function AuthSplitShell({ children, caption, topRight, accountLinkPositio
         </main>
         <footer className={styles.footer}>
           <span>© {new Date().getFullYear()} {siteConfig.companyName}</span>
+          <nav className={styles.footerLinks} aria-label="Legal">
+            <Link href={routes.terms}>Términos</Link>
+            <Link href={routes.home}>Inicio</Link>
+          </nav>
         </footer>
       </div>
     </div>

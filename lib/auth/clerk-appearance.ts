@@ -23,25 +23,21 @@ export const holisticClerkAppearance = {
   },
   elements: {
     rootBox: { width: "100%" },
-    // Tarjeta con borde, como ImpoERP.
-    cardBox: {
-      width: "100%",
-      boxShadow: "0 1px 2px rgb(36 37 34 / 0.04), 0 12px 32px -18px rgb(36 37 34 / 0.18)",
-      border: "1px solid #e4e5df",
-      borderRadius: "16px",
-      overflow: "hidden",
-    },
+    // La tarjeta la pone ClerkAuthCard; aquí Clerk va sin caja propia.
+    cardBox: { width: "100%", boxShadow: "none", border: "none", borderRadius: "0" },
     card: {
       boxShadow: "none",
       border: "none",
       borderRadius: "0",
-      backgroundColor: "#ffffff",
-      padding: "28px 28px 24px",
+      backgroundColor: "transparent",
+      padding: "0",
+      gap: "22px",
     },
+    header: { alignItems: "flex-start", textAlign: "left" },
     headerTitle: {
       fontFamily: "var(--font-jakarta), sans-serif",
-      fontWeight: "800",
-      fontSize: "1.4rem",
+      fontWeight: "700",
+      fontSize: "1.65rem",
       lineHeight: "1.2",
       letterSpacing: "-0.02em",
       color: "#242522",
@@ -58,7 +54,7 @@ export const holisticClerkAppearance = {
     },
     formFieldInput: {
       borderRadius: "12px",
-      minHeight: "46px",
+      minHeight: "50px",
       borderColor: "#d8dbd3",
       backgroundColor: "#ffffff",
       boxShadow: "none",
@@ -69,29 +65,36 @@ export const holisticClerkAppearance = {
       },
     },
     formButtonPrimary: {
-      backgroundColor: "#242522",
+      // Degradado de marca con flecha, como el botón «Iniciar sesión» de referencia.
+      background: "linear-gradient(180deg, #d47840 0%, #b85f2e 100%)",
       color: "#ffffff",
       fontWeight: "700",
       borderRadius: "12px",
-      minHeight: "46px",
+      minHeight: "50px",
       textTransform: "none",
-      boxShadow: "none",
+      boxShadow: "0 1px 0 rgb(255 255 255 / 0.25) inset, 0 12px 24px -12px rgb(184 95 46 / 0.75)",
       fontSize: "0.95rem",
       "&:hover": {
-        backgroundColor: "#3a3c36",
+        filter: "brightness(1.05)",
       },
       "&:disabled": { opacity: "0.55" },
       "&:focus-visible": { outline: "2px solid #b94708", outlineOffset: "3px" },
     },
-    formButtonPrimaryIcon: {
-      display: "none",
-    },
-    // Pie gris de la tarjeta («¿No tienes cuenta?»), como ImpoERP.
+    formButtonPrimaryIcon: { marginLeft: "6px" },
     footer: {
-      background: "#f6f6f3",
+      background: "transparent",
       boxShadow: "none",
-      borderTop: "1px solid #ecede8",
+      border: "none",
+      padding: "18px 0 0",
     },
+    dividerText: {
+      textTransform: "uppercase",
+      letterSpacing: "0.12em",
+      fontSize: "0.68rem",
+      fontWeight: "600",
+      color: "#8a827a",
+    },
+    dividerLine: { backgroundColor: "#ebe8e3" },
     footerActionLink: {
       color: "#b94708",
       fontWeight: "700",
@@ -99,14 +102,14 @@ export const holisticClerkAppearance = {
     formFieldAction: { color: "#b94708" },
     socialButtonsBlockButton: {
       borderRadius: "12px",
-      minHeight: "46px",
+      minHeight: "50px",
       borderColor: "#d8dbd3",
       backgroundColor: "#ffffff",
       boxShadow: "none",
     },
     otpCodeFieldInput: {
       borderRadius: "12px",
-      minHeight: "46px",
+      minHeight: "50px",
       borderColor: "#d8dbd3",
       boxShadow: "none",
     },

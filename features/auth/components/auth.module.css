@@ -38,7 +38,11 @@
 .topLink:hover { color: var(--auth-accent); }
 .main { display: flex; flex: 1; align-items: center; justify-content: center; padding-block: 36px 56px; outline: none; }
 .formContent { width: 100%; max-width: 420px; min-width: 0; container-type: inline-size; animation: formIn .5s cubic-bezier(.2, .8, .2, 1) both; }
-.footer { display: flex; align-items: center; justify-content: center; min-height: 32px; font-size: 13px; color: var(--auth-text-soft); }
+.footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 28px; min-height: 32px; font-size: 13px; color: var(--auth-text-soft); }
+.footerLinks { display: flex; gap: 18px; }
+.footerLinks a:hover { color: var(--auth-text); }
+.formPanelMuted { background: #f5f4f1; }
+.formPanelMuted .formContent { max-width: 440px; }
 .skipLink { position: fixed; top: 12px; left: 12px; z-index: 20; padding: 12px 20px; background: #fff; border-radius: 8px; transform: translateY(-180%); }
 .skipLink:focus { transform: translateY(0); }
 .heading { margin-bottom: 26px; }

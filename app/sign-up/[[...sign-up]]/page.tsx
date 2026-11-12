@@ -5,7 +5,7 @@ import { ClerkPasswordlessSignUp } from "@/features/auth/components/ClerkPasswor
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
-import { ClerkLegalFooter } from "@/features/auth/components/ClerkLegalFooter";
+import { ClerkAuthCard } from "@/features/auth/components/ClerkAuthCard";
 import { clerkConfigured, clerkLoginEnabled, clerkRoutes } from "@/lib/auth/clerk";
 import { routes } from "@/config/routes";
 
@@ -38,16 +38,18 @@ export default function ClerkSignUpPage() {
 
   return (
     <AuthSplitShell
+      surface="muted"
       topRight={{ label: "Ya tengo cuenta", href: clerkRoutes.signIn }}
       caption={{
         title: "Una sola cartera para todas tus cuentas.",
         sub: "Organiza tu inversión publicitaria con Ads Holistic.",
       }}
     >
+      <ClerkAuthCard>
       <ClerkMountGate>
         <ClerkPasswordlessSignUp />
       </ClerkMountGate>
-      <ClerkLegalFooter />
+      </ClerkAuthCard>
     </AuthSplitShell>
   );
 }
