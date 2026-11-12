@@ -24,7 +24,14 @@ const steps = [
 ];
 
 /** Pantalla de acceso con Clerk (sign-in / sign-up), mismo layout que ImpoERP. */
-export function ClerkAuthShell({ children }: { children: ReactNode }) {
+export function ClerkAuthShell({
+  children,
+  formLogo = true,
+}: {
+  children: ReactNode;
+  /** En /sign-in el logo va dentro de la tarjeta de Clerk. */
+  formLogo?: boolean;
+}) {
   const year = new Date().getFullYear();
 
   return (
@@ -84,6 +91,7 @@ export function ClerkAuthShell({ children }: { children: ReactNode }) {
 
       <section className={styles.formSide}>
         <div className={styles.formInner}>
+          {formLogo ? (
           <Link href={routes.home} aria-label={`${siteConfig.name} — inicio`} className={styles.formLogo}>
             <Image
               src="/brand/holistic-marketing-logo.png"
@@ -95,6 +103,7 @@ export function ClerkAuthShell({ children }: { children: ReactNode }) {
               priority
             />
           </Link>
+          ) : null}
           <div className={styles.mobileIntro}>
             <p className={styles.mobileEyebrow}>Acceso Ads Holistic</p>
             <p className={styles.mobileLead}>

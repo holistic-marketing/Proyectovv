@@ -13,9 +13,9 @@ export const holisticClerkLocalizationEs = {
     start: {
       ...esES.signIn?.start,
       title: "Bienvenido de nuevo",
-      titleCombined: "Bienvenido de nuevo",
+      titleCombined: "Entrar a Ads Holistic",
       subtitle: "Inicia sesión para entrar a tu panel de Ads Holistic.",
-      subtitleCombined: "Inicia sesión para entrar a tu panel de Ads Holistic.",
+      subtitleCombined: "Usa el correo con el que te registraste.",
     },
     emailCode: {
       ...esES.signIn?.emailCode,

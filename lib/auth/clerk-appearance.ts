@@ -1,7 +1,8 @@
 /** Holistic Clerk appearance (sign-in / sign-up): mismo estilo que ImpoERP, colores Ads Holistic. */
 export const holisticClerkAppearance = {
-  layout: {
-    logoPlacement: "none" as const,
+  options: {
+    logoPlacement: "inside" as const,
+    logoImageUrl: "/icon-512.png",
     socialButtonsPlacement: "top" as const,
     socialButtonsVariant: "blockButton" as const,
     showOptionalFields: false,
@@ -23,13 +24,24 @@ export const holisticClerkAppearance = {
   },
   elements: {
     rootBox: { width: "100%" },
-    logoBox: { display: "none" },
-    cardBox: { width: "100%", boxShadow: "none" },
+    // Una sola tarjeta (formulario + franja gris + «Secured by»), como ImpoERP.
+    logoBox: { justifyContent: "center", height: "3rem" },
+    logoImage: { width: "3rem", height: "3rem", borderRadius: "12px" },
+    cardBox: {
+      width: "100%",
+      border: "1px solid #e6e3dd",
+      borderRadius: "24px",
+      overflow: "hidden",
+      backgroundColor: "#f5f4f1",
+      boxShadow: "0 24px 48px -24px rgb(15 14 12 / 0.28), 0 2px 6px rgb(15 14 12 / 0.06)",
+    },
     card: {
       boxShadow: "none",
-      border: "1px solid #e6e3dd",
-      borderRadius: "14px",
+      border: "none",
+      borderBottom: "1px solid #e6e3dd",
+      borderRadius: "0 0 20px 20px",
       backgroundColor: "#ffffff",
+      padding: "2rem 2.25rem",
     },
     headerTitle: {
       fontFamily: "var(--font-sora), var(--font-jakarta), sans-serif",
@@ -77,6 +89,7 @@ export const holisticClerkAppearance = {
     buttonArrowIcon: { display: "none" },
     footer: {
       background: "#f5f4f1",
+      "& > div": { borderTop: "1px solid #e6e3dd" },
     },
     footerActionLink: {
       color: "#242522",

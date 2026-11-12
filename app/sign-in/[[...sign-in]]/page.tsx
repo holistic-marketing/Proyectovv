@@ -72,7 +72,7 @@ export default async function ClerkSignInPage({
   );
 
   return (
-    <ClerkAuthShell>
+    <ClerkAuthShell formLogo={false}>
       <ClerkMountGate>
         <ClerkLoadFallback>
           {rejectedMessage ? (
