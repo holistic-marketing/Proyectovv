@@ -8,8 +8,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-/** Pausa mínima entre consultas por IP: confirmar si un correo existe permite enumerarlos. */
-const PRECHECK_COOLDOWN_SECONDS = 3;
+/**
+ * Límite por IP (confirmar si un correo existe permite enumerarlos): 20 consultas por minuto.
+ * Sin pausa entre intentos, para que corregir un correo mal escrito nunca dé 429.
+ */
+const PRECHECK_WINDOW_SECONDS = 60;
+const PRECHECK_MAX_PER_WINDOW = 20;
 const NOT_REGISTERED = "Este correo no está registrado. Crea tu cuenta.";
 
 function clientIp(request: Request): string {
@@ -21,8 +25,11 @@ function clientIp(request: Request): string {
   return request.headers.get("x-real-ip")?.trim().slice(0, 64) || "unknown";
 }
 
-/** Mismo límite que lookup-email (tabla hecom_otp_rate_limits, clave por IP). */
-async function assertCooldown(key: string): Promise<{ ok: boolean; retryAfterSec?: number }> {
+/**
+ * Ventana fija por IP en hecom_otp_rate_limits (misma tabla que lookup-email):
+ * `last_sent_at` = inicio de la ventana, `send_count` = consultas dentro de ella.
+ */
+async function assertRateLimit(key: string): Promise<{ ok: boolean; retryAfterSec?: number }> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("hecom_otp_rate_limits")
@@ -30,14 +37,18 @@ async function assertCooldown(key: string): Promise<{ ok: boolean; retryAfterSec
     .eq("email", key)
     .maybeSingle<{ last_sent_at: string; send_count: number }>();
 
-  if (data?.last_sent_at) {
-    const elapsed = (Date.now() - Date.parse(data.last_sent_at)) / 1000;
-    if (elapsed < PRECHECK_COOLDOWN_SECONDS) {
-      return { ok: false, retryAfterSec: Math.ceil(PRECHECK_COOLDOWN_SECONDS - elapsed) };
-    }
+  const now = Date.now();
+  const windowStart = data?.last_sent_at ? Date.parse(data.last_sent_at) : 0;
+  const elapsed = (now - windowStart) / 1000;
+  const inWindow = Boolean(data) && elapsed < PRECHECK_WINDOW_SECONDS;
+
+  if (inWindow && (data?.send_count ?? 0) >= PRECHECK_MAX_PER_WINDOW) {
+    return { ok: false, retryAfterSec: Math.ceil(PRECHECK_WINDOW_SECONDS - elapsed) };
   }
   await admin.from("hecom_otp_rate_limits").upsert(
-    { email: key, last_sent_at: new Date().toISOString(), send_count: (data?.send_count ?? 0) + 1 },
+    inWindow
+      ? { email: key, last_sent_at: data!.last_sent_at, send_count: (data?.send_count ?? 0) + 1 }
+      : { email: key, last_sent_at: new Date(now).toISOString(), send_count: 1 },
     { onConflict: "email" },
   );
   return { ok: true };
@@ -79,7 +90,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rate = await assertCooldown(`clerk-precheck:${clientIp(request)}`);
+  const rate = await assertRateLimit(`clerk-precheck:${clientIp(request)}`);
   if (!rate.ok) {
     return NextResponse.json(
       { error: `Espera ${rate.retryAfterSec}s antes de intentar de nuevo.`, retryAfterSec: rate.retryAfterSec },
