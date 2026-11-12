@@ -1,6 +1,6 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
-import { clerkConfigured, clerkRoutes } from "@/lib/auth/clerk";
+import { clerkConfigured } from "@/lib/auth/clerk";
 import { completeClerkLoginToHolistic } from "@/lib/auth/clerk-bridge.server";
 import { routes } from "@/config/routes";
 import { serverEnv } from "@/lib/env/env.server";
@@ -27,12 +27,12 @@ export async function GET(request: NextRequest) {
 
   const { userId, sessionId } = await auth();
   if (!userId) {
-    return NextResponse.redirect(new URL(clerkRoutes.signIn, serverEnv.appUrl));
+    return NextResponse.redirect(new URL(`${routes.login}?error=clerk_session`, serverEnv.appUrl));
   }
 
   const user = await currentUser();
   if (!user) {
-    return NextResponse.redirect(new URL(clerkRoutes.signIn, serverEnv.appUrl));
+    return NextResponse.redirect(new URL(`${routes.login}?error=clerk_session`, serverEnv.appUrl));
   }
 
   const result = await completeClerkLoginToHolistic(user, {

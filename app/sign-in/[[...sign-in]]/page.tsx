@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
@@ -49,6 +50,13 @@ export default async function ClerkSignInPage({
 
   const { error } = await searchParams;
   const rejectedMessage = clerkBridgeErrorMessage(typeof error === "string" ? error : null);
+
+  // Ya tiene sesión de Clerk (p. ej. volvió a /sign-in tras el código): el <SignIn> quedaría
+  // en blanco, así que se termina el puente directamente.
+  if (!rejectedMessage) {
+    const { userId } = await auth();
+    if (userId) redirect(clerkRoutes.complete);
+  }
   const signIn = (
     <SignIn
       withSignUp

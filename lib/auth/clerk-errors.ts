@@ -9,6 +9,7 @@ export const CLERK_BRIDGE_ERRORS = {
   clerk_supabase: "No pudimos preparar tu cuenta. Inténtalo de nuevo.",
   clerk_link: "No pudimos iniciar tu sesión. Inténtalo de nuevo.",
   clerk_verify: "No pudimos iniciar tu sesión. Inténtalo de nuevo.",
+  clerk_session: "Tu sesión se cortó a mitad del ingreso. Vuelve a entrar con tu correo.",
 } as const;
 
 export type ClerkBridgeErrorCode = keyof typeof CLERK_BRIDGE_ERRORS;
