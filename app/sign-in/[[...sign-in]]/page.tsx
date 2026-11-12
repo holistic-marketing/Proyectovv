@@ -5,7 +5,7 @@ import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
-import { ClerkAuthCard } from "@/features/auth/components/ClerkAuthCard";
+import { ClerkAuthShell } from "@/features/auth/components/ClerkAuthShell";
 import { ClerkRejectedGate } from "@/features/auth/components/ClerkRejectedGate.client";
 import {
   clerkConfigured,
@@ -63,15 +63,7 @@ export default async function ClerkSignInPage({
   );
 
   return (
-    <AuthSplitShell
-      surface="muted"
-      topRight={{ label: "Inicio", href: routes.home }}
-      caption={{
-        title: "Tu publicidad, en un solo lugar.",
-        sub: "Accede a tus cuentas y sigue el movimiento de tu inversión.",
-      }}
-    >
-      <ClerkAuthCard>
+    <ClerkAuthShell>
       <ClerkMountGate>
         {rejectedMessage ? (
           <ClerkRejectedGate message={rejectedMessage}>{signIn}</ClerkRejectedGate>
@@ -79,7 +71,6 @@ export default async function ClerkSignInPage({
           signIn
         )}
       </ClerkMountGate>
-      </ClerkAuthCard>
-    </AuthSplitShell>
+    </ClerkAuthShell>
   );
 }

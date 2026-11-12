@@ -13,6 +13,7 @@ export const holisticClerkLocalizationEs = {
     start: {
       ...esES.signIn?.start,
       title: "Bienvenido de nuevo",
+      titleCombined: "Bienvenido de nuevo",
       subtitle: "Inicia sesión para entrar a tu panel de Ads Holistic.",
       subtitleCombined: "Inicia sesión para entrar a tu panel de Ads Holistic.",
     },
@@ -30,6 +31,7 @@ export const holisticClerkLocalizationEs = {
     start: {
       ...esES.signUp?.start,
       title: "Crear cuenta",
+      titleCombined: "Crear cuenta",
       subtitle: "Si ya eres cliente Hecom, usa el mismo correo.",
       subtitleCombined: "Si ya eres cliente Hecom, usa el mismo correo.",
     },
