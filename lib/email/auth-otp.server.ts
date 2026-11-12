@@ -32,7 +32,7 @@ export async function sendHecomOtpEmail(input: {
     code: escapeHtml(input.code),
     logoUrl: `${appUrl}${siteConfig.logoSrc}`,
     // Icono transparente: el círculo lo pinta la celda (cambia de color en modo oscuro).
-    shieldUrl: `${appUrl}/email/shield-icon.png`,
+    shieldUrl: `${appUrl}/email/shield-icon-warm.png`,
     brand: escapeHtml(brand),
     domain: escapeHtml(domain),
     magicLink: escapeHtml(input.magicLink),
