@@ -31,7 +31,8 @@ export async function sendHecomOtpEmail(input: {
   const html = buildVerificationCodeEmailHtml({
     code: escapeHtml(input.code),
     logoUrl: `${appUrl}${siteConfig.logoSrc}`,
-    shieldUrl: `${appUrl}/email/shield.png`,
+    // Icono transparente: el círculo lo pinta la celda (cambia de color en modo oscuro).
+    shieldUrl: `${appUrl}/email/shield-icon.png`,
     brand: escapeHtml(brand),
     domain: escapeHtml(domain),
     magicLink: escapeHtml(input.magicLink),
