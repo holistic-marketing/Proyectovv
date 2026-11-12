@@ -1482,7 +1482,14 @@
       "metaOAuthButton": "Conectar com Facebook",
       "metaOAuthOr": "ou conecte com o ID da sua conta:",
       "metaPending": "Enviamos uma solicitação de acesso. Aprove no Meta Business Suite e toque em Conectar de novo.",
-      "metaOpenRequests": "Abrir solicitações no Meta →"
+      "metaOpenRequests": "Abrir solicitações no Meta →",
+      "metaCsvTitle": "Não é admin do Business ou a conta é pessoal? Envie o relatório da Meta",
+      "metaCsvStep1": "No Gerenciador de Anúncios → Relatórios, escolha Campanhas com detalhamento por Dia.",
+      "metaCsvStep2": "Mantenha Nome da campanha, Dia e Valor usado; escolha os últimos 30 dias.",
+      "metaCsvStep3": "Exporte como .csv e envie aqui. Repita quando quiser atualizar.",
+      "metaCsvUpload": "Enviar CSV da Meta",
+      "metaCsvApply": "Importar gasto",
+      "metaCsvSummary": "{days} dia(s) · {campaigns} campanha(s) · {spend}"
     },
     "pilot": {
       "title": "Piloto",

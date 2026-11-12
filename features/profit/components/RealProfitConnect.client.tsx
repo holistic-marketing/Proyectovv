@@ -19,6 +19,17 @@ export type RpConnections = {
   courier: { ordersFromCourier: number; lastImportAt: string | null };
 };
 
+type MetaCsvPreview = {
+  days?: number;
+  campaigns?: number;
+  totalSpend?: number;
+  currency?: string;
+  from?: string | null;
+  to?: string | null;
+  message?: string;
+  error?: string;
+};
+
 type CourierPreview = {
   matched?: number;
   totalRows?: number;
@@ -254,6 +265,48 @@ export function RealProfitConnect({
     }
   }
 
+  // Meta CSV (plan B universal)
+  const metaFileRef = useRef<HTMLInputElement>(null);
+  const [metaCsv, setMetaCsv] = useState<string | null>(null);
+  const [metaCsvBusy, setMetaCsvBusy] = useState(false);
+  const [metaCsvPreview, setMetaCsvPreview] = useState<MetaCsvPreview | null>(null);
+  const [metaCsvDone, setMetaCsvDone] = useState<MetaCsvPreview | null>(null);
+
+  async function sendMetaCsv(text: string, apply: boolean) {
+    setMetaCsvBusy(true);
+    try {
+      const res = await fetch("/api/profit/meta-csv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: text, apply }),
+      });
+      const json = (await res.json().catch(() => ({}))) as MetaCsvPreview;
+      if (!res.ok) json.error = json.error ?? t("genericError");
+      if (apply) {
+        setMetaCsvDone(json);
+        if (res.ok) {
+          setMetaCsvPreview(null);
+          setMetaCsv(null);
+          await onChanged();
+        }
+      } else {
+        setMetaCsvPreview(json);
+      }
+    } catch {
+      (apply ? setMetaCsvDone : setMetaCsvPreview)({ error: t("genericError") });
+    } finally {
+      setMetaCsvBusy(false);
+    }
+  }
+
+  async function onMetaFile(file: File | undefined) {
+    if (!file) return;
+    setMetaCsvDone(null);
+    const text = await file.text();
+    setMetaCsv(text);
+    await sendMetaCsv(text, false);
+  }
+
   // Courier CSV
   const fileRef = useRef<HTMLInputElement>(null);
   const [csv, setCsv] = useState<string | null>(null);
@@ -480,6 +533,55 @@ export function RealProfitConnect({
                   {t("metaOpenRequests")}
                 </a>
               ) : null}
+              <details className="mt-4 rounded-xl border border-dashed border-[#e7e0d8] bg-white/60 p-3">
+                <summary className="cursor-pointer text-[12.5px] font-semibold text-[#3f3a34]">{t("metaCsvTitle")}</summary>
+                <ol className="mt-2 list-decimal space-y-1 pl-4 text-[12px] text-[#5c564e]">
+                  <li>{t("metaCsvStep1")}</li>
+                  <li>{t("metaCsvStep2")}</li>
+                  <li>{t("metaCsvStep3")}</li>
+                </ol>
+                <input
+                  ref={metaFileRef}
+                  type="file"
+                  accept=".csv,.txt,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    void onMetaFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <button type="button" onClick={() => metaFileRef.current?.click()} disabled={metaCsvBusy} className={`${ghostBtn} mt-2`}>
+                  {metaCsvBusy && !metaCsvPreview ? t("reading") : t("metaCsvUpload")}
+                </button>
+                {metaCsvPreview ? (
+                  metaCsvPreview.error ? (
+                    <p className="mt-2 text-[12px] font-medium text-[#b91c1c]">{metaCsvPreview.error}</p>
+                  ) : (
+                    <div className="mt-2 rounded-xl bg-[#faf8f5] p-3">
+                      <p className="text-[12.5px] font-semibold text-[#1c1917]">
+                        {t("metaCsvSummary", {
+                          days: metaCsvPreview.days ?? 0,
+                          campaigns: metaCsvPreview.campaigns ?? 0,
+                          spend: `${metaCsvPreview.currency ?? ""} ${(metaCsvPreview.totalSpend ?? 0).toLocaleString()}`,
+                        })}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button type="button" onClick={() => metaCsv && void sendMetaCsv(metaCsv, true)} disabled={metaCsvBusy || !metaCsvPreview.days} className={primaryBtn}>
+                          {metaCsvBusy ? t("applying") : t("metaCsvApply")}
+                        </button>
+                        <button type="button" onClick={() => { setMetaCsvPreview(null); setMetaCsv(null); }} className={ghostBtn}>
+                          {t("cancel")}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                ) : null}
+                {metaCsvDone ? (
+                  <p className={`mt-2 text-[12px] font-medium ${metaCsvDone.error ? "text-[#b91c1c]" : "text-emerald-700"}`}>
+                    {metaCsvDone.error ?? metaCsvDone.message}
+                  </p>
+                ) : null}
+              </details>
             </>
           )}
         </SourceCard>

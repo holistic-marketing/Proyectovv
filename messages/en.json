@@ -1482,7 +1482,14 @@
       "metaOAuthButton": "Continue with Facebook",
       "metaOAuthOr": "or connect it with your ad account ID:",
       "metaPending": "We sent you an access request. Approve it in Meta Business Suite and tap Connect again.",
-      "metaOpenRequests": "Open requests in Meta →"
+      "metaOpenRequests": "Open requests in Meta →",
+      "metaCsvTitle": "Not a Business admin or using a personal account? Upload the Meta report",
+      "metaCsvStep1": "In Ads Manager → Reports, choose Campaigns broken down by Day.",
+      "metaCsvStep2": "Keep Campaign name, Day and Amount spent; pick the last 30 days.",
+      "metaCsvStep3": "Export as .csv and upload it here. Repeat whenever you want to refresh.",
+      "metaCsvUpload": "Upload Meta CSV",
+      "metaCsvApply": "Import spend",
+      "metaCsvSummary": "{days} day(s) · {campaigns} campaign(s) · {spend}"
     },
     "pilot": {
       "title": "Pilot",
