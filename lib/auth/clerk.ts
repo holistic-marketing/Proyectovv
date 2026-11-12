@@ -45,11 +45,17 @@ export const clerkCspHosts = {
     "https://*.clerk.accounts.dev",
     // Bot protection (Turnstile) del registro propio.
     "https://challenges.cloudflare.com",
+    // Clerk Protect: sin esto Clerk bloquea el alta («action_blocked»).
+    "https://cdn.protect.clerk.com",
+    "https://*.protect.clerk.com",
   ],
   connect: [
     "https://clerk.adsholistic.com",
     "https://api.clerk.com",
     "https://*.clerk.accounts.dev",
+    "https://cdn.protect.clerk.com",
+    "https://*.protect.clerk.com",
+    "https://challenges.cloudflare.com",
   ],
   frames: [
     "https://clerk.adsholistic.com",

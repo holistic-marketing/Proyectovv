@@ -36,6 +36,8 @@ const contentSecurityPolicy = [
     "frame-src 'self' https://www.loom.com https://loom.com https://drive.google.com https://docs.google.com https://accounts.google.com https://www.tiktok.com",
     ...clerkCspHosts.frames,
   ].join(" "),
+  // Workers blob: de Clerk Protect / Turnstile.
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
