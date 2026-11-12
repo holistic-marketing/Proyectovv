@@ -9,7 +9,7 @@
  * Paleta clara tomada de /sign-in:
  * - fondo #f5f4f1 (`--ah-paper-alt`, clerk-auth-shell.module.css);
  * - tarjeta #ffffff y borde #e6e3dd (lib/auth/clerk-appearance.ts); la franja inferior
- *   también es blanca, separada solo por la línea #e6e3dd, para que la tarjeta se lea entera;
+ *   también es blanca y sin línea separadora, para que la tarjeta se lea como un solo contenedor;
  * - texto #242522 / #4f514b / #676961, borde de campos #dcd8d1, terracota #d47840 / #b94708.
  *
  * Tablas + estilos en línea (modo claro): Gmail y Outlook ignoran flexbox y <svg>.
@@ -59,7 +59,8 @@ const LIGHT = {
 const DARK_RULES: ReadonlyArray<readonly [string, string]> = [
   [".em-bg", "background-color:#0c0a09 !important;"],
   [".em-card", "background-color:#18181b !important;border-color:#27272a !important;box-shadow:none !important;"],
-  [".em-card-footer", "background-color:#121215 !important;border-color:#27272a !important;"],
+  // Mismo color que la tarjeta: la franja no se separa, todo se lee como un solo contenedor.
+  [".em-card-footer", "background-color:#18181b !important;"],
   [".em-badge", "background-color:#2a1a10 !important;"],
   [".em-title", "color:#fafaf9 !important;"],
   [".em-text", "color:#a8a29e !important;"],
@@ -150,14 +151,11 @@ export function buildVerificationCodeEmailHtml(input: VerificationCodeEmailInput
                   </td>
                 </tr>${magicLinkRow}
                 <tr>
-                  <td style="padding:32px 0 0;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
-                <tr>
-                  <td class="em-card-footer" align="center" style="padding:18px 40px 20px;background-color:${LIGHT.footer};border-top:1px solid ${LIGHT.border};border-radius:0 0 21px 21px;">
-                    <p class="em-text" style="margin:0;font-family:${FONT};font-size:13px;line-height:20px;color:${LIGHT.body};">
+                  <td class="em-card-footer" align="center" style="padding:24px 40px 32px;background-color:${LIGHT.footer};border-radius:0 0 21px 21px;">
+                    <p class="em-text" style="margin:0;font-family:${FONT};font-size:12px;line-height:18px;color:${LIGHT.body};">
                       Para proteger tu cuenta, no compartas este código con nadie.
                     </p>
-                    <p class="em-muted" style="margin:6px 0 0;font-family:${FONT};font-size:12px;line-height:18px;color:${LIGHT.muted};">
+                    <p class="em-muted" style="margin:4px 0 0;font-family:${FONT};font-size:11px;line-height:16px;color:${LIGHT.muted};">
                       Si no pediste este código, puedes ignorar este correo.
                     </p>
                   </td>
