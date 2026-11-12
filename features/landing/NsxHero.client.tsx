@@ -7,10 +7,11 @@ import { NsxBtnPrimary, NsxBtnSecondary } from "./NsxButtons";
 import { NsxReveal } from "./NsxReveal.client";
 import type { LandingCopy } from "./i18n/landing-copy";
 
+// Fotos referenciales (Unsplash).
 const AVATARS = [
-  "/nexsas/automation/images/ns-avatar-11.jpg",
-  "/nexsas/automation/images/ns-avatar-13.jpg",
-  "/nexsas/automation/images/ns-avatar-14.jpg",
+  "/landing/holistic/avatars/a1.jpg",
+  "/landing/holistic/avatars/a2.jpg",
+  "/landing/holistic/avatars/a3.jpg",
 ] as const;
 
 const ROTATE_MS = 2600;
