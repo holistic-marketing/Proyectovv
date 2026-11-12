@@ -5,6 +5,7 @@ import { AuthSplitShell } from "@/features/auth/components/AuthSplitShell";
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
+import { ClerkLegalFooter } from "@/features/auth/components/ClerkLegalFooter";
 import { ClerkRejectedGate } from "@/features/auth/components/ClerkRejectedGate.client";
 import {
   clerkConfigured,
@@ -73,6 +74,7 @@ export default async function ClerkSignInPage({
           signIn
         )}
       </ClerkMountGate>
+      <ClerkLegalFooter />
     </AuthSplitShell>
   );
 }

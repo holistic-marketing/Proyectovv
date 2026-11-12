@@ -5,6 +5,7 @@ import { ClerkPasswordlessSignUp } from "@/features/auth/components/ClerkPasswor
 import { AuthFormHeading } from "@/features/auth/components/AuthFormUi";
 import styles from "@/features/auth/components/auth.module.css";
 import { ClerkMountGate } from "@/features/auth/components/ClerkMountGate.client";
+import { ClerkLegalFooter } from "@/features/auth/components/ClerkLegalFooter";
 import { clerkConfigured, clerkLoginEnabled, clerkRoutes } from "@/lib/auth/clerk";
 import { routes } from "@/config/routes";
 
@@ -46,6 +47,7 @@ export default function ClerkSignUpPage() {
       <ClerkMountGate>
         <ClerkPasswordlessSignUp />
       </ClerkMountGate>
+      <ClerkLegalFooter />
     </AuthSplitShell>
   );
 }

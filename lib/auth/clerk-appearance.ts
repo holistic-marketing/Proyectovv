@@ -23,26 +23,33 @@ export const holisticClerkAppearance = {
   },
   elements: {
     rootBox: { width: "100%" },
-    cardBox: { width: "100%", boxShadow: "none", border: "none" },
+    // Tarjeta con borde, como ImpoERP.
+    cardBox: {
+      width: "100%",
+      boxShadow: "0 1px 2px rgb(36 37 34 / 0.04), 0 12px 32px -18px rgb(36 37 34 / 0.18)",
+      border: "1px solid #e4e5df",
+      borderRadius: "16px",
+      overflow: "hidden",
+    },
     card: {
       boxShadow: "none",
       border: "none",
       borderRadius: "0",
-      backgroundColor: "transparent",
-      padding: "0",
+      backgroundColor: "#ffffff",
+      padding: "28px 28px 24px",
     },
     headerTitle: {
       fontFamily: "var(--font-jakarta), sans-serif",
-      fontWeight: "700",
-      fontSize: "2rem",
-      lineHeight: "1.15",
-      letterSpacing: "-0.035em",
+      fontWeight: "800",
+      fontSize: "1.4rem",
+      lineHeight: "1.2",
+      letterSpacing: "-0.02em",
       color: "#242522",
     },
     headerSubtitle: {
       color: "#676961",
-      fontSize: "0.9375rem",
-      lineHeight: "1.6",
+      fontSize: "0.9rem",
+      lineHeight: "1.55",
     },
     formFieldLabel: {
       color: "#242522",
@@ -51,7 +58,7 @@ export const holisticClerkAppearance = {
     },
     formFieldInput: {
       borderRadius: "12px",
-      minHeight: "52px",
+      minHeight: "46px",
       borderColor: "#d8dbd3",
       backgroundColor: "#ffffff",
       boxShadow: "none",
@@ -66,7 +73,7 @@ export const holisticClerkAppearance = {
       color: "#ffffff",
       fontWeight: "700",
       borderRadius: "12px",
-      minHeight: "52px",
+      minHeight: "46px",
       textTransform: "none",
       boxShadow: "none",
       fontSize: "0.95rem",
@@ -79,11 +86,11 @@ export const holisticClerkAppearance = {
     formButtonPrimaryIcon: {
       display: "none",
     },
+    // Pie gris de la tarjeta («¿No tienes cuenta?»), como ImpoERP.
     footer: {
-      background: "transparent",
+      background: "#f6f6f3",
       boxShadow: "none",
-      border: "none",
-      padding: "24px 0 0",
+      borderTop: "1px solid #ecede8",
     },
     footerActionLink: {
       color: "#b94708",
@@ -92,14 +99,14 @@ export const holisticClerkAppearance = {
     formFieldAction: { color: "#b94708" },
     socialButtonsBlockButton: {
       borderRadius: "12px",
-      minHeight: "52px",
+      minHeight: "46px",
       borderColor: "#d8dbd3",
       backgroundColor: "#ffffff",
       boxShadow: "none",
     },
     otpCodeFieldInput: {
       borderRadius: "12px",
-      minHeight: "52px",
+      minHeight: "46px",
       borderColor: "#d8dbd3",
       boxShadow: "none",
     },
