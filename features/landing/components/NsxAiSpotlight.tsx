@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { NsxReveal } from "./NsxReveal.client";
-import type { LandingCopy } from "./i18n/landing-copy";
+import type { LandingCopy } from "../i18n/landing-copy";
 
 const SCORE = 86;
 const RING_R = 52;

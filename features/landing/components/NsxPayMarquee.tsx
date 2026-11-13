@@ -1,4 +1,4 @@
-import type { LandingCopy } from "./i18n/landing-copy";
+import type { LandingCopy } from "../i18n/landing-copy";
 
 /** Franja animada con los métodos de recarga (se duplica la lista para el loop). */
 export function NsxPayMarquee({ copy }: { copy: LandingCopy["payments"] }) {

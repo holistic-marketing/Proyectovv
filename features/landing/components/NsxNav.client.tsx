@@ -7,9 +7,9 @@ import { siteConfig } from "@/config/site";
 import { HolisticLogo } from "@/components/brand/EcomdyLogo";
 import { cn } from "@/lib/cn";
 import { NsxBtnPrimary, NsxBtnSecondary } from "./NsxButtons";
-import type { LandingCopy } from "./i18n/landing-copy";
-import type { LandingLocale } from "./i18n/landing-locale";
-import { LandingLocaleSwitcher } from "./i18n/LandingLocaleSwitcher.client";
+import type { LandingCopy } from "../i18n/landing-copy";
+import type { LandingLocale } from "../i18n/landing-locale";
+import { LandingLocaleSwitcher } from "../i18n/LandingLocaleSwitcher.client";
 
 export function NsxNav({
   locale,

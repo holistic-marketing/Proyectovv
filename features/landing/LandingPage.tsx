@@ -1,15 +1,18 @@
 import "./automation-landing.css";
 import "./landing-sections.css";
-import { NsxNav } from "./NsxNav.client";
-import { NsxHero } from "./NsxHero.client";
-import { NsxPayMarquee } from "./NsxPayMarquee";
-import { NsxShowcase } from "./NsxShowcase.client";
-import { NsxAiSpotlight } from "./NsxAiSpotlight";
-import { NsxAbout } from "./NsxAbout";
-import { NsxFeatures, NsxProcess } from "./NsxFeatures";
-import { NsxFaq, NsxReferral } from "./NsxFaq";
-import { NsxGallery } from "./NsxGallery";
-import { NsxCta, NsxFooter } from "./NsxCta";
+import { NsxNav } from "./components/NsxNav.client";
+import { NsxHero } from "./components/NsxHero.client";
+import { NsxPayMarquee } from "./components/NsxPayMarquee";
+import { NsxShowcase } from "./components/NsxShowcase.client";
+import { NsxAiSpotlight } from "./components/NsxAiSpotlight";
+import { NsxAbout } from "./components/NsxAbout";
+import { NsxFeatures } from "./components/NsxFeatures";
+import { NsxProcess } from "./components/NsxProcess";
+import { NsxFaq } from "./components/NsxFaq";
+import { NsxReferral } from "./components/NsxReferral";
+import { NsxGallery } from "./components/NsxGallery";
+import { NsxCta } from "./components/NsxCta";
+import { NsxFooter } from "./components/NsxFooter";
 import { getLandingCopy } from "./i18n/landing-copy";
 import { landingLocaleHtmlLang, type LandingLocale } from "./i18n/landing-locale";
 
@@ -17,7 +20,7 @@ import { landingLocaleHtmlLang, type LandingLocale } from "./i18n/landing-locale
  * Landing principal — layout Automation SaaS (Nexsas template),
  * marca e info Holistic Marketing / Hecom.
  * Acceso público dual: Registrarme + Iniciar sesión.
- * Idioma propio (es/en/zh), independiente del i18n del dashboard.
+ * Idioma propio (es/en/zh/pt), independiente del i18n del dashboard.
  */
 export function LandingPage({ locale }: { locale: LandingLocale }) {
   const copy = getLandingCopy(locale);

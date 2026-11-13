@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { LandingCopy } from "./i18n/landing-copy";
+import type { LandingCopy } from "../i18n/landing-copy";
 
 /** Imágenes en el mismo orden que `copy.gallery.items`. */
 const GALLERY_SRCS = [
