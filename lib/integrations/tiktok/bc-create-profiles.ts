@@ -115,6 +115,8 @@ const SELF_SERVE_LIMIT_OVERRIDES: Record<string, number> = {
   "97780792-7dd8-43e1-9da2-42599e08e60e": 6,
   // Catherine Burgos — 2026-10-28, gerencia: 302.0 y 303.0 reemplazan a 200.0 y 210 (quitadas) → cupo 5.
   "319963fc-94e0-473b-89e6-36f410419112": 5,
+  // Pablo Achamizo Vilchez — 2026-11-13, gerencia: ya tiene 2; +1 → cupo 3.
+  "665bcd91-78a4-4ff2-96b0-2a2cdb00b80f": 3,
 };
 
 /**
