@@ -54,21 +54,11 @@ async function assertRateLimit(key: string): Promise<{ ok: boolean; retryAfterSe
   return { ok: true };
 }
 
-/** ¿Ya tiene cuenta en Supabase? `profiles` refleja `auth.users` (trigger handle_new_user). */
-async function existsInSupabase(email: string): Promise<boolean> {
-  const { data } = await createAdminClient()
-    .from("profiles")
-    .select("id")
-    .eq("email", email)
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-  return Boolean(data?.id);
-}
-
 /**
- * Antes de que Clerk envíe el código de /sign-in: solo correos ya registrados
- * (staff, cliente en Hecom o usuario existente). Si aún no está en Clerk, se crea
- * para que el código pueda enviarse. El puente /auth/clerk/complete vuelve a filtrar.
+ * Antes de que Clerk envíe el código de /sign-in: solo staff o clientes en Hecom
+ * (mismo criterio que el puente). Una fila en `profiles` no basta: cuentas solo de
+ * ImpoERP quedarían con un usuario de Clerk que el puente no puede provisionar.
+ * Si aún no está en Clerk, se crea para que el código pueda enviarse.
  */
 export async function POST(request: Request) {
   if (!clerkLoginEnabled()) {
@@ -113,8 +103,6 @@ export async function POST(request: Request) {
       );
     }
   }
-  if (!allowed) allowed = await existsInSupabase(email);
-
   if (!allowed) {
     logHecomOtp("info", "clerk_precheck_not_registered", { email: maskEmail(email) });
     return NextResponse.json({ error: NOT_REGISTERED }, { status: 403 });
