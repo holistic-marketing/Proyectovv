@@ -1,4 +1,3 @@
-import { listAdsHolisticClienteIds } from "@/lib/hecom/ads-cliente-cohort.server";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session.server";
 import { userIsAllowedAdmin } from "@/lib/admin/allowlist";
@@ -29,11 +28,9 @@ function listStaffClientes() {
   if (staffListCache && Date.now() - staffListCache.at < STAFF_LIST_TTL_MS) {
     return staffListCache.value;
   }
-  // Los ids de AdsHolistic y la lista de Hecom se piden a la vez; las cuentas
-  // TikTok se cargan solo para los clientes que se muestran.
-  const adsIds = listAdsHolisticClienteIds();
-  adsIds.catch(() => {});
-  const value = listHecomClientes({ onlyIds: adsIds });
+  // Gerencia ve todos los clientes de Hecom (usen o no AdsHolistic) para poder
+  // recargarles y revisar sus cuentas, como antes del 03/11.
+  const value = listHecomClientes();
   const entry = { at: Date.now(), value };
   staffListCache = entry;
   // Si falla, no se guarda: el siguiente intento vuelve a consultar.
@@ -44,8 +41,7 @@ function listStaffClientes() {
 }
 
 /**
- * Lista clientes con vínculo de usuario o pago exitoso en AdsHolistic.
- * Una ficha del CRM Hecom, por sí sola, no acredita uso de AdsHolistic.
+ * Lista los clientes del CRM Hecom Club (todos, para gerencia).
  * Con OTP activo: usuario no-admin solo ve clientes de SU email.
  */
 export async function GET() {
