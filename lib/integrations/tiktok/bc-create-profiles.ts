@@ -147,6 +147,8 @@ export function resolveTikTokSelfServeUncountedAdvertisers(
 const SELF_SERVE_CREATE_BM_OVERRIDES: Record<string, TikTokCreateBmBucket> = {
   "6425e2d9-bb9b-4176-a126-ae889c1c8543": "300",
   "673ac838-ce18-4074-a7a7-63407c72c80a": "300",
+  // Pablo Achamizo Vilchez — 2026-11-13: sus cuentas son BM200; la nueva también.
+  "665bcd91-78a4-4ff2-96b0-2a2cdb00b80f": "200",
 };
 
 function parseLimitOverridesEnv(): Record<string, number> {
