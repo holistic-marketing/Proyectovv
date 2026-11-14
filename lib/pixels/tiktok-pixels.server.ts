@@ -622,3 +622,148 @@ export async function setupCodEventsForStoredPixel(input: {
     pixel: mapStored(own as Record<string, unknown>),
   };
 }
+
+/**
+ * Vincula un píxel ya creado a más cuentas del mismo cliente (BC pixel link).
+ * Caso típico: el cliente abre cuentas nuevas después de crear su píxel
+ * (Milton Ramos, 13/11/2026: el píxel quedó solo en 2 de sus 5 cuentas).
+ */
+export async function linkStoredPixelToAdvertisers(input: {
+  organizationId: string;
+  hecomClienteId: string;
+  pixelRowId: string;
+  advertiserIds: string[];
+  userId: string;
+}): Promise<{
+  linkedAdvertiserIds: string[];
+  linkFailures: { advertiserId: string; error: string }[];
+}> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("tiktok_pixels")
+    .select("*")
+    .eq("id", input.pixelRowId)
+    .eq("hecom_cliente_id", input.hecomClienteId)
+    .maybeSingle();
+  if (error || !data) {
+    throw new Error(error?.message ?? "Píxel no encontrado.");
+  }
+
+  const row = data as Record<string, unknown>;
+  const stored = mapStored(row);
+  const pixelCode = stored.pixelCode?.trim();
+  if (!pixelCode) {
+    throw new Error("Este píxel no tiene código de TikTok; no se puede vincular.");
+  }
+
+  const { data: siblings, error: sibErr } = await admin
+    .from("tiktok_pixels")
+    .select("advertiser_id")
+    .eq("pixel_id", stored.pixelId)
+    .eq("hecom_cliente_id", input.hecomClienteId);
+  if (sibErr) throw new Error(sibErr.message);
+  const already = new Set(
+    (siblings ?? []).map((s) => String((s as { advertiser_id: unknown }).advertiser_id)),
+  );
+
+  const targets = [
+    ...new Set(input.advertiserIds.map((id) => id.trim()).filter(Boolean)),
+  ].filter((id) => !already.has(id));
+  if (targets.length === 0) {
+    throw new Error("Elige al menos una cuenta que todavía no tenga este píxel.");
+  }
+  for (const advertiserId of targets) {
+    await assertAdvertiserBelongsToCliente({
+      hecomClienteId: input.hecomClienteId,
+      advertiserId,
+      requireActive: true,
+    });
+  }
+
+  const metadata = isPlainRecord(row.metadata) ? row.metadata : {};
+  const ownerAdvertiserId =
+    String(metadata.owner_advertiser_id ?? "").trim() || stored.advertiserId;
+  const bcId =
+    String(metadata.bc_id ?? "").trim() ||
+    (await resolveBcIdForAdvertiser(ownerAdvertiserId));
+
+  const organizationId = await resolveWritableOrganizationId({
+    preferredOrganizationId: input.organizationId,
+    userId: input.userId,
+  });
+
+  // Un píxel creado para una sola cuenta todavía no es asset del BC.
+  if (metadata.transferred_to_bc !== true) {
+    try {
+      await transferTikTokPixelToBc({ bcId, pixelCode, organizationId });
+    } catch (e) {
+      console.warn("[pixels] link_transfer_warn", {
+        bcId,
+        msg: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  const linkedAdvertiserIds: string[] = [];
+  const linkFailures: { advertiserId: string; error: string }[] = [];
+  for (const advertiserId of targets) {
+    try {
+      await linkTikTokPixelToAdvertisers({
+        bcId,
+        pixelCode,
+        advertiserIds: [advertiserId],
+        relationStatus: "LINK",
+        organizationId,
+      });
+      linkedAdvertiserIds.push(advertiserId);
+    } catch (e) {
+      linkFailures.push({
+        advertiserId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  if (linkedAdvertiserIds.length > 0) {
+    const allLinked = [...already, ...linkedAdvertiserIds];
+    const nextMeta = {
+      ...metadata,
+      created_via: metadata.created_via ?? "ads_holistic",
+      owner_advertiser_id: ownerAdvertiserId,
+      bc_id: bcId,
+      transferred_to_bc: true,
+      linked_advertiser_ids: allLinked,
+    };
+    for (const advertiserId of linkedAdvertiserIds) {
+      await upsertStoredPixel({
+        organizationId,
+        hecomClienteId: input.hecomClienteId,
+        advertiserId,
+        pixel: {
+          pixelId: stored.pixelId,
+          pixelCode,
+          pixelName: stored.name,
+          pixelCategory: stored.pixelCategory,
+          advertiserId,
+          createTime: null,
+          raw: {},
+        },
+        createdBy: input.userId,
+        eventsJson: stored.eventsJson,
+        metadata: nextMeta,
+      });
+    }
+    const { error: metaErr } = await admin
+      .from("tiktok_pixels")
+      .update({ metadata: nextMeta, updated_at: new Date().toISOString() })
+      .eq("pixel_id", stored.pixelId)
+      .eq("hecom_cliente_id", input.hecomClienteId);
+    if (metaErr) throw new Error(metaErr.message);
+  }
+
+  return { linkedAdvertiserIds, linkFailures };
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

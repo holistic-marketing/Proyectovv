@@ -145,6 +145,9 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
   const [showCreate, setShowCreate] = useState(false);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [pixelName, setPixelName] = useState("");
+  const [linking, setLinking] = useState(false);
+  /** null = todas las cuentas que faltan, marcadas por defecto. */
+  const [linkPickedRaw, setLinkPickedRaw] = useState<string[] | null>(null);
 
   const pixels = useMemo(() => groupPixels(rows), [rows]);
   const selected =
@@ -361,6 +364,61 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
     }
   }
 
+  const unlinkedAccounts = selected
+    ? accounts.filter((a) => !selected.advertiserIds.includes(a.advertiserId))
+    : [];
+  // Por defecto todas las cuentas que faltan quedan marcadas.
+  const linkPicked = (linkPickedRaw ?? unlinkedAccounts.map((a) => a.advertiserId)).filter(
+    (id) => unlinkedAccounts.some((a) => a.advertiserId === id),
+  );
+
+  function toggleLinkPicked(id: string) {
+    setLinkPickedRaw(
+      linkPicked.includes(id) ? linkPicked.filter((x) => x !== id) : [...linkPicked, id],
+    );
+  }
+
+  async function handleLinkMore() {
+    if (!selected || linkPicked.length === 0) return;
+    setLinking(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/pixels/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pixelRowId: selected.rowId, advertiserIds: linkPicked }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        linkedAdvertiserIds?: string[];
+        linkFailures?: { advertiserId: string; error: string }[];
+      };
+      if (!res.ok || !json.ok) throw new Error(json.error || t("linkMoreError"));
+      if (json.linkFailures?.length) {
+        setError(
+          t("linkFailed", {
+            accounts: json.linkFailures.map((f) => accountName(f.advertiserId)).join(", "),
+          }),
+        );
+      }
+      if (json.linkedAdvertiserIds?.length) {
+        setNotice(
+          t("linkMoreDone", {
+            accounts: json.linkedAdvertiserIds.map(accountName).join(", "),
+          }),
+        );
+      }
+      setLinkPickedRaw(null);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("linkMoreError"));
+    } finally {
+      setLinking(false);
+    }
+  }
+
   const activeToken = selected
     ? tokens.find((x) => x.pixelCode === selected.pixelCode) ?? null
     : null;
@@ -520,7 +578,10 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setSelectedKey(p.key)}
+                onClick={() => {
+                  setSelectedKey(p.key);
+                  setLinkPickedRaw(null);
+                }}
                 className={`flex max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold transition ${
                   active
                     ? "border-[#1c1917] bg-[#1c1917] text-white"
@@ -583,6 +644,46 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
               })}
             </p>
           </div>
+
+          {unlinkedAccounts.length > 0 ? (
+            <div className="mt-4 rounded-xl border border-[#ffd9bf] bg-[#fff8f3] p-4 sm:p-5">
+              <h3 className="text-[15px] font-bold text-[#1c1917]">
+                {t("linkMoreTitle")}
+              </h3>
+              <p className="mt-1 text-[12.5px] leading-5 text-[#5c564e]">
+                {t("linkMoreBody")}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {unlinkedAccounts.map((a) => {
+                  const on = linkPicked.includes(a.advertiserId);
+                  return (
+                    <button
+                      key={a.advertiserId}
+                      type="button"
+                      onClick={() => toggleLinkPicked(a.advertiserId)}
+                      aria-pressed={on}
+                      className={`max-w-full truncate rounded-full border px-3.5 py-2 text-[12.5px] font-semibold transition ${
+                        on
+                          ? "border-[#ff781f] bg-white text-[#1c1917]"
+                          : "border-[#e7e0d8] bg-white text-[#8a8177] hover:border-[#cfc6bb]"
+                      }`}
+                    >
+                      {on ? "✓ " : ""}
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleLinkMore()}
+                disabled={linking || linkPicked.length === 0}
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[#ff781f] px-4 text-[13px] font-semibold text-white transition hover:bg-[#f06a12] disabled:opacity-50"
+              >
+                {linking ? t("linkingMore") : t("linkMoreAction")}
+              </button>
+            </div>
+          ) : null}
 
           <div className="mt-4 rounded-xl border border-[#ece7e0] p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
