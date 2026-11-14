@@ -245,8 +245,20 @@ export async function syncPixelsFromTikTok(input: {
     organizationId,
   });
 
+  // Conservar lo ya guardado (dueño del píxel compartido, BC, eventos):
+  // sin owner_advertiser_id, "activar eventos" falla desde una cuenta vinculada.
+  const { data: existingRows } = await createAdminClient()
+    .from("tiktok_pixels")
+    .select("pixel_id, metadata, events_json")
+    .eq("advertiser_id", input.advertiserId);
+  const existing = new Map(
+    (existingRows ?? []).map((r) => [String(r.pixel_id), r]),
+  );
+
   const stored: StoredTikTokPixel[] = [];
   for (const pixel of pixels) {
+    const prev = existing.get(pixel.pixelId);
+    const prevMeta = isPlainRecord(prev?.metadata) ? prev.metadata : {};
     stored.push(
       await upsertStoredPixel({
         organizationId,
@@ -254,7 +266,8 @@ export async function syncPixelsFromTikTok(input: {
         advertiserId: input.advertiserId,
         pixel,
         createdBy: input.userId,
-        metadata: { synced_at: new Date().toISOString() },
+        eventsJson: prev?.events_json ?? undefined,
+        metadata: { ...prevMeta, synced_at: new Date().toISOString() },
       }),
     );
   }

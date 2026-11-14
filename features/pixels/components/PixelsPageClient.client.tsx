@@ -149,9 +149,15 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
   /** null = todas las cuentas que faltan, marcadas por defecto. */
   const [linkPickedRaw, setLinkPickedRaw] = useState<string[] | null>(null);
 
+  /** advertiserId elegido arriba; null = todas las cuentas. */
+  const [accountFilter, setAccountFilter] = useState<string | null>(null);
+
   const pixels = useMemo(() => groupPixels(rows), [rows]);
+  const visiblePixels = accountFilter
+    ? pixels.filter((p) => p.advertiserIds.includes(accountFilter))
+    : pixels;
   const selected =
-    pixels.find((p) => p.key === selectedKey) ?? pixels[0] ?? null;
+    visiblePixels.find((p) => p.key === selectedKey) ?? visiblePixels[0] ?? null;
   const accountName = useCallback(
     (id: string) => accounts.find((a) => a.advertiserId === id)?.name ?? id,
     [accounts],
@@ -274,7 +280,8 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
     setError(null);
     setNotice(null);
     try {
-      let found = 0;
+      // Un píxel compartido vuelve una vez por cuenta: contamos píxeles únicos.
+      const found = new Set<string>();
       for (const advertiserId of pickedIds) {
         const res = await fetch(
           `/api/pixels?syncAdvertiser=${encodeURIComponent(advertiserId)}`,
@@ -283,16 +290,16 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
         const json = (await res.json()) as {
           ok?: boolean;
           error?: string;
-          remoteCount?: number;
+          pixels?: PixelRow[];
         };
         if (!res.ok || !json.ok) throw new Error(json.error || t("syncError"));
-        found += json.remoteCount ?? 0;
+        for (const p of json.pixels ?? []) found.add(p.pixelId || p.pixelCode || p.id);
       }
       await refresh();
-      if (found === 0) {
+      if (found.size === 0) {
         setNotice(t("importNone"));
       } else {
-        setNotice(t("importFound", { count: found }));
+        setNotice(t("importFound", { count: found.size }));
         setShowCreate(false);
       }
     } catch (e) {
@@ -568,10 +575,39 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
         </section>
       ) : null}
 
-      {pixels.length > 1 ? (
+      {pixels.length > 1 && accounts.length > 1 ? (
+        <label className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] font-semibold text-[#1c1917]">
+          {t("filterLabel")}
+          <select
+            value={accountFilter ?? ""}
+            onChange={(e) => {
+              setAccountFilter(e.target.value || null);
+              setSelectedKey(null);
+              setLinkPickedRaw(null);
+            }}
+            className="h-10 min-w-0 max-w-full rounded-xl border border-[#e7e0d8] bg-white px-3 text-[13px] font-medium text-[#1c1917] outline-none transition focus:border-[#cfc6bb] focus:ring-2 focus:ring-[#1c1917]/8"
+          >
+            <option value="">{t("filterAll")}</option>
+            {accounts.map((a) => (
+              <option key={a.advertiserId} value={a.advertiserId}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      {accountFilter && visiblePixels.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-[#e0d8ce] bg-[#faf8f5] px-5 py-6 text-[13px] text-[#5c564e]">
+          {t("filterEmpty")}
+        </p>
+      ) : null}
+
+      {visiblePixels.length > 1 ? (
         <div className="flex flex-wrap gap-2" role="tablist">
-          {pixels.map((p) => {
+          {visiblePixels.map((p) => {
             const active = selected?.key === p.key;
+            const fromShopify = /^tiktok pixel for shopify/i.test(p.name);
             return (
               <button
                 key={p.key}
@@ -594,6 +630,14 @@ export function PixelsPageClient({ clienteName }: { clienteName: string }) {
                   }`}
                 />
                 <span className="min-w-0 truncate">{p.name}</span>
+                <span
+                  className={`shrink-0 text-[11px] font-medium ${
+                    active ? "text-white/70" : "text-[#8a8177]"
+                  }`}
+                >
+                  {fromShopify ? `${t("shopifyBadge")} · ` : ""}
+                  {t("accountsCount", { count: p.advertiserIds.length })}
+                </span>
               </button>
             );
           })}
