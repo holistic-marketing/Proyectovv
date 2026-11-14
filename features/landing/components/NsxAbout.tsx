@@ -1,6 +1,6 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
-import type { LandingCopy } from "./i18n/landing-copy";
+import type { LandingCopy } from "../i18n/landing-copy";
 
 const images = {
   tall: "/landing/holistic/about-tall.png",

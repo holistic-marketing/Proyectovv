@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import type { LandingCopy, ShowcaseTabId } from "./i18n/landing-copy";
+import type { LandingCopy, ShowcaseTabId } from "../i18n/landing-copy";
 
 const AUTOPLAY_MS = 7000;
 

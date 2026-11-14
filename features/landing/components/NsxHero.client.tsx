@@ -5,7 +5,7 @@ import Image from "next/image";
 import { routes } from "@/config/routes";
 import { NsxBtnPrimary, NsxBtnSecondary } from "./NsxButtons";
 import { NsxReveal } from "./NsxReveal.client";
-import type { LandingCopy } from "./i18n/landing-copy";
+import type { LandingCopy } from "../i18n/landing-copy";
 
 // Fotos referenciales (Unsplash).
 const AVATARS = [
